@@ -1,0 +1,10 @@
+/bin/
+/dist/
+/out/
+cover.out
+coverage.html
+.evalvet/cache/
+.evalvet/out/
+bench/results/profiles/
+*.test
+*.prof
