@@ -212,7 +212,10 @@ func (a *App) pricer(suite *config.Suite, provider string) scheduler.Pricer {
 
 func modelFamily(model string) string {
 	m := strings.ToLower(model)
-	for _, f := range []string{"claude", "gpt", "gemini", "llama", "qwen", "mistral", "mock"} {
+	if strings.HasPrefix(m, "mock") {
+		return ""
+	}
+	for _, f := range []string{"claude", "gpt", "gemini", "llama", "qwen", "mistral"} {
 		if strings.Contains(m, f) {
 			return f
 		}

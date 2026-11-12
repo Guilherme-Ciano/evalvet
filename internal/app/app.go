@@ -152,6 +152,9 @@ func (a *App) Warnings(s *config.Suite) []string {
 	}
 	if j := s.Defaults.Judge.Target; j != "" {
 		jf := modelFamily(s.Targets[j].Model)
+		if jf == "" {
+			return out
+		}
 		for _, name := range s.Matrix.Targets {
 			if modelFamily(s.Targets[name].Model) == jf && name != j {
 				out = append(out, fmt.Sprintf("judge %s shares the model family %q with target %s (self-preference bias)", j, jf, name))

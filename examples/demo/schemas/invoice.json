@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "required": ["vendor", "total", "currency"],
+  "properties": {
+    "vendor": {
+      "type": "object",
+      "required": ["name", "vat_id"],
+      "properties": { "name": { "type": "string" }, "vat_id": { "type": "string" } }
+    },
+    "total": { "type": "number", "minimum": 0 },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "date": { "type": "string" }
+  }
+}

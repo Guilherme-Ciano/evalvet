@@ -1,0 +1,388 @@
+{
+  "schema": 1,
+  "suite": "demo",
+  "created_at": "2026-11-12T11:08:52Z",
+  "config_hash": "92c7421b22bcbe99802e56bc7fd27f13c9b6e07243e4f729e13950a5c0d33677",
+  "pricing_version": "2026-11-01",
+  "evalvet_version": "dev",
+  "targets": [
+    {
+      "target": "assistant",
+      "provider": "mock",
+      "model": "mock-good",
+      "cases": [
+        {
+          "case_id": "invoice#PT-001",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#PT-002",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#ES-003",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#ES-004",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#DE-005",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#DE-006",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#IE-007",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#NL-008",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#PT-009",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#PT-010",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#ES-011",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#ES-012",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#DE-013",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#DE-014",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#IE-015",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#NL-016",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#PT-017",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#PT-018",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#ES-019",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#ES-020",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#DE-021",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#DE-022",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#IE-023",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#NL-024",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#PT-025",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#PT-026",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#ES-027",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#ES-028",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#DE-029",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "invoice#DE-030",
+          "line": 59,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "refund#known-A-1001",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "refund#known-A-1002",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "refund#known-A-1003",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "refund#known-A-1004",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "refund#known-A-1005",
+          "line": 72,
+          "n": 3,
+          "passes": 0,
+          "errors": 0,
+          "mean_score": 1,
+          "first_failure": "tool_order: missing check_refund_policy in order (calls: [lookup_order, issue_refund])"
+        },
+        {
+          "case_id": "refund#known-A-1006",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "refund#known-A-1007",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "refund#known-A-1008",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "refund#known-A-1009",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "refund#known-A-1010",
+          "line": 72,
+          "n": 3,
+          "passes": 3,
+          "errors": 0,
+          "mean_score": 1
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9001",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9002",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9003",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9004",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9005",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9006",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9007",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9008",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9009",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        },
+        {
+          "case_id": "unknown-order#unknown-B-9010",
+          "line": 88,
+          "n": 3,
+          "passes": 3,
+          "errors": 0
+        }
+      ],
+      "pass_rate": 0.98,
+      "trials": 150,
+      "errors": 0,
+      "cached_trials": 0,
+      "cost_usd": 0.061922999999999964,
+      "latency_p50_ns": 35468479,
+      "latency_p95_ns": 89979406,
+      "ttft_p50_ns": 23824000,
+      "live_trials": 150,
+      "mean_tool_calls": 0.78
+    }
+  ]
+}

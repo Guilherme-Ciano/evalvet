@@ -1,0 +1,109 @@
+version: 1
+suite: demo
+description: Offline demo. Invoice extraction plus a refund agent against the Go mock provider. The baseline was recorded with mock-good; set DEMO_MODEL=mock-regressed to see the gate fire.
+
+defaults:
+  samples: 3
+  timeout: 30s
+  judge:
+    target: judge
+
+providers:
+  mock:
+    kind: openai_compatible
+    base_url: ${MOCK_URL:-http://127.0.0.1:8080}/v1
+    limits: { concurrency: 32 }
+  mock-anthropic:
+    kind: anthropic
+    api_key_env: MOCK_ANTHROPIC_KEY
+    base_url: ${MOCK_URL:-http://127.0.0.1:8080}
+    limits: { concurrency: 16 }
+
+targets:
+  assistant:
+    provider: mock
+    model: ${DEMO_MODEL:-mock-good}
+    params: { max_tokens: 512 }
+  judge:
+    provider: mock-anthropic
+    model: mock-judge
+    params: { max_tokens: 512 }
+
+prompts:
+  extract: file://prompts/extract_invoice.md
+  agent_system: file://prompts/support_agent.md
+
+tools:
+  lookup_order:
+    description: Fetch an order by id
+    parameters: file://schemas/order.json
+    mock:
+      match:
+        - when: { order_id: { regex: "^A-" } }
+          return: { status: delivered, total: 129.90, currency: EUR, days_since_delivery: 12 }
+        - when: { order_id: { regex: "^B-" } }
+          return: { error: not_found }
+          is_error: true
+  check_refund_policy:
+    description: Return refund eligibility for an order
+    parameters: file://schemas/order.json
+    mock:
+      static: { eligible: true, window_days: 30 }
+  issue_refund:
+    description: Issue a refund
+    parameters: file://schemas/refund.json
+    mock:
+      static: { refund_id: R-77, status: queued }
+
+tests:
+  - id: invoice
+    prompt: extract
+    each: file://fixtures/invoices.jsonl
+    assert:
+      - kind: json_schema
+        schema: file://schemas/invoice.json
+      - kind: json_path
+        path: $.total
+        equals: "{{ .expected.total }}"
+      - kind: json_path
+        path: $.vendor.vat_id
+        equals: "{{ .expected.vat_id }}"
+
+  - id: refund
+    system: agent_system
+    each: file://fixtures/orders_known.jsonl
+    turns:
+      - user: "{{ .message }}"
+    agent: { tools: [lookup_order, check_refund_policy, issue_refund], max_steps: 6 }
+    assert:
+      - kind: tool_order
+        sequence: [lookup_order, check_refund_policy, issue_refund]
+      - kind: max_tool_calls
+        value: 4
+      - kind: judge
+        rubric:
+          - id: confirms_refund
+            pass: The reply confirms the refund was queued and mentions R-77.
+
+  - id: unknown-order
+    system: agent_system
+    each: file://fixtures/orders_unknown.jsonl
+    turns:
+      - user: "{{ .message }}"
+    agent: { tools: [lookup_order, check_refund_policy, issue_refund], max_steps: 4 }
+    assert:
+      - kind: tool_not_called
+        name: issue_refund
+      - kind: contains
+        value: ["could not find", "not found"]
+        any: true
+        case_insensitive: true
+
+matrix:
+  targets: [assistant]
+
+gates:
+  baseline: examples/demo/baseline.json
+  alpha: 0.05
+  min_effect: 0.03
+  max_error_rate: 0.05
