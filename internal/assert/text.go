@@ -13,6 +13,8 @@ import (
 	"github.com/Guilherme-Ciano/evalvet/internal/domain"
 )
 
+const maxJSONAttempts = 16
+
 var errNoJSON = errors.New("no JSON value found in output")
 
 func ExtractJSON(s string) (any, error) {
@@ -31,11 +33,17 @@ func ExtractJSON(s string) (any, error) {
 			}
 		}
 	}
+	attempts := 0
 	for i, r := range s {
-		if r == '{' || r == '[' {
-			if v, err := decodeFirst(s[i:]); err == nil {
-				return v, nil
-			}
+		if r != '{' && r != '[' {
+			continue
+		}
+		if attempts == maxJSONAttempts {
+			break
+		}
+		attempts++
+		if v, err := decodeFirst(s[i:]); err == nil {
+			return v, nil
 		}
 	}
 	return nil, errNoJSON

@@ -1,0 +1,6 @@
+go test fuzz v1
+byte('L')
+byte('T')
+byte('\x00')
+byte('%')
+uint64(0)

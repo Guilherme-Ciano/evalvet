@@ -93,6 +93,9 @@ func parse(text string, rubric []assert.Criterion) (passed int, failed []string,
 }
 
 func (j *Judge) Judge(ctx context.Context, req assert.JudgeRequest) (domain.JudgeVerdict, error) {
+	if len(req.Rubric) == 0 {
+		return domain.JudgeVerdict{}, fmt.Errorf("judge needs at least one rubric criterion: %w", domain.ErrConfig)
+	}
 	name := req.Target
 	if name == "" {
 		name = j.defaultTarget
