@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="evalvet.invoices" tests="6" failures="2" errors="1">
+  <testsuite name="invoices.current" tests="2" failures="0" errors="0">
+    <testcase name="inv#1" classname="invoices.current" time="0"></testcase>
+    <testcase name="inv#2" classname="invoices.current" time="0"></testcase>
+  </testsuite>
+  <testsuite name="invoices.candidate" tests="4" failures="2" errors="1">
+    <testcase name="inv#1" classname="invoices.candidate" time="0">
+      <failure message="regressed 5/5 → 1/5 (Holm p=0.0004)" type="regression">json_path: $.total want 10 | got&#xA;1</failure>
+    </testcase>
+    <testcase name="inv#2" classname="invoices.candidate" time="0"></testcase>
+    <testcase name="agent#1" classname="invoices.candidate" time="0">
+      <error message="3 trial(s) errored" type="error">error: &lt;timeout&gt; &amp; &#34;retry&#34;</error>
+    </testcase>
+    <testcase name="agent#2" classname="invoices.candidate" time="0">
+      <failure message="regressed 4/4 → 1/4 (Holm p=0.0302)" type="regression">contains: missing refund</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

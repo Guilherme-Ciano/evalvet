@@ -53,7 +53,10 @@ func Write(w io.Writer, r domain.RunResult) error {
 		fmt.Fprintf(w, "warning: %s\n", warn)
 	}
 	verdict := "PASS"
-	if r.Failing() {
+	switch {
+	case r.Aborted != "":
+		verdict = "ABORTED (" + r.Aborted + ")"
+	case r.Failing():
 		verdict = "FAIL"
 	}
 	_, err := fmt.Fprintf(w, "\nresult: %s\n", verdict)

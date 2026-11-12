@@ -1,0 +1,26 @@
+suite invoices · 24 trials · 4 cached
+
+TARGET     MODEL           PASS RATE  CASES  TRIALS  ERRORS  COST   P50    P95    TTFT P50
+current    mock-good       0.90       2      10      0       $0.01  120ms  900ms  80ms
+candidate  mock-regressed  0.50       4      14      3       n/a    2.5s   4.0s   n/a
+
+baseline:candidate: candidate@baseline → candidate (regression)
+  pass rate 0.95 → 0.50 (Δ −0.45, 95% CI [−0.70, 0.00]), p=<0.001, N=4 cases × k=5 · REGRESSION
+  cost $0.01 → $0.02 (+50%) · p50 latency 100ms → 2.5s · TTFT p50 50ms → n/a
+  · delta below -min_effect
+  · p < alpha | holm
+    inv#1                        5/5 → 1/5  p_adj=<0.001  json_path: $.total want 10 | got
+1
+    inv#2                        5/5 → 4/5  p_adj=0.50  
+    agent#2                      4/4 → 1/4  p_adj=0.03  contains: missing refund
+
+current→candidate: current → candidate (noninferiority)
+  pass rate 0.90 → 0.88 (Δ 0.00, 95% CI [−0.10, +0.10]), p=0.30, N=2 cases × k=4.5 · INCONCLUSIVE
+  cost $0.01 → n/a · p50 latency 120ms → 90ms · TTFT p50 n/a → n/a
+
+gate min_pass_rate failed for candidate: pass rate 0.500 < 0.900
+
+gate cost failed for candidate: cost +50% > +20%
+warning: no pricing for target candidate (model mock-regressed): cost is reported as n/a
+
+result: FAIL

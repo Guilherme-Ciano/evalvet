@@ -1,0 +1,4 @@
+data: {"id":"chatcmpl-err1","object":"chat.completion.chunk","created":1760000300,"model":"gpt-5-mini-2025-08-07","choices":[{"index":0,"delta":{"role":"assistant","content":"partial "},"finish_reason":null}],"usage":null}
+
+data: {"error":{"message":"The server had an error while processing your request. Sorry about that!","type":"server_error","param":null,"code":null}}
+

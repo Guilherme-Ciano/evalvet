@@ -280,6 +280,9 @@ func (a *App) Run(ctx context.Context, s *config.Suite) (domain.RunResult, error
 	trials, runErr := runner.Run(ctx, plan)
 	progress.done()
 	res := a.assemble(s, plan, trials, started)
+	if runErr != nil {
+		res.Aborted = runErr.Error()
+	}
 	cs := ps.counters.Snapshot()
 	a.opts.Logger.InfoContext(ctx, "run finished",
 		slog.Int("trials", len(trials)), slog.Int64("cache_hits", cs.Hits), slog.Int64("cache_misses", cs.Misses),

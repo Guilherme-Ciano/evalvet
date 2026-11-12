@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -141,6 +142,11 @@ func (c *cli) run(ctx context.Context, args []string, f *runFlags) error {
 	if len(formats) == 0 {
 		formats = []string{formatTable}
 	}
+	for _, fm := range formats {
+		if !slices.Contains([]string{formatTable, formatJSON, "md", "markdown", "junit"}, strings.TrimSpace(fm)) {
+			return usageError("unknown format %q (want table, json, md or junit)", fm)
+		}
+	}
 	worst := ExitOK
 	var firstErr error
 	for _, path := range args {
@@ -182,7 +188,7 @@ func (c *cli) runSuite(
 		out = filepath.Join(out, s.Name)
 	}
 	if err := c.emit(res, formats, out, f.ci); err != nil {
-		return ExitInfra, err
+		return exitCode(err), err
 	}
 	if f.saveBaseline != "" && runErr == nil {
 		b := baseline.FromRun(res, c.getenv("GITHUB_SHA"), time.Now())

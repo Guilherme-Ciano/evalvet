@@ -14,6 +14,9 @@ func Marker(suite string) string {
 }
 
 func overall(r domain.RunResult) (string, string) {
+	if r.Aborted != "" {
+		return "❌", "aborted"
+	}
 	worst := domain.VerdictPass
 	for _, c := range r.Comparisons {
 		switch {

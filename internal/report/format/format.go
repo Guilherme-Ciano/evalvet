@@ -72,7 +72,7 @@ func Dur(d time.Duration) string {
 	switch {
 	case d <= 0:
 		return "n/a"
-	case d < time.Second:
+	case d.Round(time.Millisecond) < time.Second:
 		return fmt.Sprintf("%dms", d.Round(time.Millisecond).Milliseconds())
 	default:
 		return fmt.Sprintf("%.1fs", d.Seconds())

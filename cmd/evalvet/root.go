@@ -24,6 +24,7 @@ type BuildInfo struct {
 }
 
 type cli struct {
+	started   bool
 	streams   Streams
 	env       config.LookupEnv
 	build     BuildInfo
@@ -55,6 +56,10 @@ func newRoot(c *cli) *cobra.Command {
 		Long:          "evalvet samples every case k times and gates CI on a paired permutation test and bootstrap CI against a baseline, instead of a fixed threshold.",
 		SilenceErrors: true,
 		SilenceUsage:  true,
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
+			c.started = true
+			return nil
+		},
 	}
 	root.SetOut(c.streams.Out)
 	root.SetErr(c.streams.Err)
@@ -76,6 +81,9 @@ func Execute(ctx context.Context, args []string, streams Streams, env config.Loo
 		return ExitOK
 	}
 	code := exitCode(err)
+	if _, isExit := errors.AsType[*ExitError](err); !c.started && !isExit {
+		code = ExitUsage
+	}
 	var ee *ExitError
 	if !errors.As(err, &ee) || ee.Err != nil {
 		fmt.Fprintln(streams.Err, "evalvet:", err)

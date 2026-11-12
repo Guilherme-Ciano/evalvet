@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"net/http"
 	"net/http/httptrace"
 	"os"
@@ -238,18 +239,35 @@ func defaultTransport() http.RoundTripper {
 	return c
 }
 
+const maxRetryAfter = time.Hour
+
+func seconds(v string, unit time.Duration) (time.Duration, bool) {
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil || math.IsNaN(f) || f <= 0 {
+		return 0, false
+	}
+	if f >= float64(maxRetryAfter/unit) {
+		return maxRetryAfter, true
+	}
+	return time.Duration(f * float64(unit)), true
+}
+
 func ParseRetryAfter(h http.Header, now time.Time) time.Duration {
+	return min(parseRetryAfter(h, now), maxRetryAfter)
+}
+
+func parseRetryAfter(h http.Header, now time.Time) time.Duration {
 	if h == nil {
 		return 0
 	}
 	if v := h.Get("Retry-After-Ms"); v != "" {
-		if ms, err := strconv.ParseFloat(v, 64); err == nil && ms > 0 {
-			return time.Duration(ms * float64(time.Millisecond))
+		if d, ok := seconds(v, time.Millisecond); ok {
+			return d
 		}
 	}
 	if v := h.Get("Retry-After"); v != "" {
-		if s, err := strconv.ParseFloat(v, 64); err == nil && s > 0 {
-			return time.Duration(s * float64(time.Second))
+		if d, ok := seconds(v, time.Second); ok {
+			return d
 		}
 		if t, err := http.ParseTime(v); err == nil {
 			if d := t.Sub(now); d > 0 {

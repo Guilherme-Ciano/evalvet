@@ -226,7 +226,7 @@ func TestCanonicalLargeWholeNumbersMatchIntegerSpelling(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(a) != string(b) {
+		if !bytes.Equal(a, b) {
 			t.Errorf("%s -> %s, %s -> %s", p[0], a, p[1], b)
 		}
 	}

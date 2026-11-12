@@ -1,0 +1,12 @@
+data: {"id":"chatcmpl-use1","object":"chat.completion.chunk","created":1760000100,"model":"gpt-5-mini-2025-08-07","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"chatcmpl-use1","object":"chat.completion.chunk","created":1760000100,"model":"gpt-5-mini-2025-08-07","choices":[{"index":0,"delta":{"content":"The total "},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"chatcmpl-use1","object":"chat.completion.chunk","created":1760000100,"model":"gpt-5-mini-2025-08-07","choices":[{"index":0,"delta":{"content":"is 42."},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"chatcmpl-use1","object":"chat.completion.chunk","created":1760000100,"model":"gpt-5-mini-2025-08-07","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
+
+data: {"id":"chatcmpl-use1","object":"chat.completion.chunk","created":1760000100,"model":"gpt-5-mini-2025-08-07","choices":[],"usage":{"prompt_tokens":100,"completion_tokens":30,"total_tokens":130,"prompt_tokens_details":{"cached_tokens":20,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":7,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}}}
+
+data: [DONE]
+

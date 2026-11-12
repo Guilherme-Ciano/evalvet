@@ -1,0 +1,209 @@
+{
+  "schema": 1,
+  "suite": "invoices",
+  "suite_file": "evals/invoices.eval.yaml",
+  "config_hash": "abc123def4567890",
+  "evalvet_version": "v0.1.0",
+  "started_at": "2026-11-12T09:30:00Z",
+  "duration_ns": 42000000000,
+  "method": {
+    "alpha": 0.05,
+    "min_effect": 0.03,
+    "seed": 7,
+    "permutations": 10000,
+    "bootstrap": 2000,
+    "pricing_version": "2026-11-01"
+  },
+  "targets": [
+    {
+      "target": "current",
+      "provider": "mock",
+      "model": "mock-good",
+      "cases": [
+        {
+          "case_id": "inv#1",
+          "line": 12,
+          "n": 5,
+          "passes": 5,
+          "errors": 0
+        },
+        {
+          "case_id": "inv#2",
+          "line": 12,
+          "n": 5,
+          "passes": 4,
+          "errors": 0,
+          "first_failure": "json_path: total mismatch"
+        }
+      ],
+      "pass_rate": 0.9,
+      "trials": 10,
+      "errors": 0,
+      "cached_trials": 4,
+      "cost_usd": 0.0123,
+      "latency_p50_ns": 120000000,
+      "latency_p95_ns": 900000000,
+      "ttft_p50_ns": 80000000,
+      "live_trials": 6,
+      "mean_tool_calls": 0
+    },
+    {
+      "target": "candidate",
+      "provider": "mock",
+      "model": "mock-regressed",
+      "cases": [
+        {
+          "case_id": "inv#1",
+          "line": 12,
+          "n": 5,
+          "passes": 1,
+          "errors": 0,
+          "first_failure": "json_path: $.total want 10 | got\n1"
+        },
+        {
+          "case_id": "inv#2",
+          "line": 12,
+          "n": 5,
+          "passes": 4,
+          "errors": 0
+        },
+        {
+          "case_id": "agent#1",
+          "line": 30,
+          "n": 0,
+          "passes": 0,
+          "errors": 3,
+          "first_failure": "error: <timeout> & \"retry\""
+        },
+        {
+          "case_id": "agent#2",
+          "line": 31,
+          "n": 4,
+          "passes": 1,
+          "errors": 0,
+          "first_failure": "contains: missing refund"
+        }
+      ],
+      "pass_rate": 0.5,
+      "trials": 14,
+      "errors": 3,
+      "cached_trials": 0,
+      "latency_p50_ns": 2500000000,
+      "latency_p95_ns": 4000000000,
+      "ttft_p50_ns": 0,
+      "live_trials": 0,
+      "mean_tool_calls": 0
+    }
+  ],
+  "comparisons": [
+    {
+      "name": "baseline:candidate",
+      "base": "candidate@baseline",
+      "head": "candidate",
+      "mode": "regression",
+      "n": 4,
+      "mean_k": 5,
+      "base_pass_rate": 0.95,
+      "head_pass_rate": 0.5,
+      "delta": -0.45,
+      "ci_low": -0.7,
+      "ci_high": -0.001,
+      "p": 0.0004,
+      "p_improve": 0,
+      "exact": false,
+      "test": "",
+      "mde": 0,
+      "verdict": "regression",
+      "reasons": [
+        "delta below -min_effect",
+        "p < alpha | holm"
+      ],
+      "base_cost_usd": 0.01,
+      "head_cost_usd": 0.015,
+      "base_latency_p50_ns": 100000000,
+      "head_latency_p50_ns": 2500000000,
+      "base_latency_p95_ns": 500000000,
+      "head_latency_p95_ns": 4000000000,
+      "base_ttft_p50_ns": 50000000,
+      "head_ttft_p50_ns": 0,
+      "cases": [
+        {
+          "case_id": "inv#1",
+          "line": 12,
+          "base_passes": 5,
+          "base_n": 5,
+          "head_passes": 1,
+          "head_n": 5,
+          "p": 0.01,
+          "p_adjusted": 0.0004,
+          "first_failure": "json_path: $.total want 10 | got\n1"
+        },
+        {
+          "case_id": "inv#2",
+          "line": 12,
+          "base_passes": 5,
+          "base_n": 5,
+          "head_passes": 4,
+          "head_n": 5,
+          "p": 0.5,
+          "p_adjusted": 0.5
+        },
+        {
+          "case_id": "agent#2",
+          "line": 31,
+          "base_passes": 4,
+          "base_n": 4,
+          "head_passes": 1,
+          "head_n": 4,
+          "p": 0.03,
+          "p_adjusted": 0.0302,
+          "first_failure": "contains: missing refund"
+        }
+      ]
+    },
+    {
+      "name": "current→candidate",
+      "base": "current",
+      "head": "candidate",
+      "mode": "noninferiority",
+      "n": 2,
+      "mean_k": 4.5,
+      "base_pass_rate": 0.9,
+      "head_pass_rate": 0.88,
+      "delta": -0.004,
+      "ci_low": -0.1,
+      "ci_high": 0.1,
+      "p": 0.3,
+      "p_improve": 0,
+      "exact": false,
+      "test": "",
+      "mde": 0,
+      "verdict": "inconclusive",
+      "base_cost_usd": 0.0123,
+      "base_latency_p50_ns": 120000000,
+      "head_latency_p50_ns": 90000000,
+      "base_latency_p95_ns": 900000000,
+      "head_latency_p95_ns": 800000000,
+      "base_ttft_p50_ns": 0,
+      "head_ttft_p50_ns": 0
+    }
+  ],
+  "gate_failures": [
+    {
+      "gate": "min_pass_rate",
+      "target": "candidate",
+      "message": "pass rate 0.500 < 0.900"
+    },
+    {
+      "gate": "cost",
+      "target": "candidate",
+      "message": "cost +50% > +20%"
+    }
+  ],
+  "total_cost_usd": 0.0123,
+  "cache_hits": 4,
+  "total_trials": 24,
+  "warnings": [
+    "no pricing for target candidate (model mock-regressed): cost is reported as n/a"
+  ]
+}

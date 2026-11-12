@@ -202,13 +202,32 @@ func stopReason(r ant.StopReason) domain.StopReason {
 	}
 }
 
+func streamErrorStatus(msg string) int {
+	switch {
+	case strings.Contains(msg, "overloaded_error"):
+		return 529
+	case strings.Contains(msg, "rate_limit_error"):
+		return http.StatusTooManyRequests
+	case strings.Contains(msg, "api_error"):
+		return http.StatusInternalServerError
+	}
+	return 0
+}
+
 func (p *Provider) mapError(err error) error {
 	if apiErr, ok := errors.AsType[*ant.Error](err); ok {
 		var h http.Header
 		if apiErr.Response != nil {
 			h = apiErr.Response.Header
 		}
-		return provider.HTTPError(p.cfg.Name, apiErr.StatusCode, h, apiErr.Message)
+		status := apiErr.StatusCode
+		if s := streamErrorStatus(err.Error()); status < http.StatusBadRequest && s != 0 {
+			status = s
+		}
+		return provider.HTTPError(p.cfg.Name, status, h, apiErr.Message)
+	}
+	if s := streamErrorStatus(err.Error()); s != 0 {
+		return provider.HTTPError(p.cfg.Name, s, nil, err.Error())
 	}
 	return fmt.Errorf("%s stream: %w", p.cfg.Name, err)
 }

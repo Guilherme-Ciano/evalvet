@@ -191,11 +191,12 @@ type RunResult struct {
 	CacheHits   int           `json:"cache_hits"`
 	TotalTrials int           `json:"total_trials"`
 	Warnings    []string      `json:"warnings,omitempty"`
+	Aborted     string        `json:"aborted,omitempty"`
 	Trials      []Trial       `json:"trials,omitempty"`
 }
 
 func (r RunResult) Failing() bool {
-	if len(r.Gates) > 0 {
+	if len(r.Gates) > 0 || r.Aborted != "" {
 		return true
 	}
 	for _, c := range r.Comparisons {

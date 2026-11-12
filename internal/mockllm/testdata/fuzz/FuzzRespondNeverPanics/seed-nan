@@ -1,0 +1,5 @@
+go test fuzz v1
+string("mock-good")
+string("Vendor: x\nTotal: NaN")
+bool(false)
+bool(false)

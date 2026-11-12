@@ -1,0 +1,5 @@
+go test fuzz v1
+string("mock-judge")
+string("- [\n- []\n<output>")
+bool(false)
+bool(true)
