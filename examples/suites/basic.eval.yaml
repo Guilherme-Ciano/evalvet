@@ -1,0 +1,35 @@
+version: 1
+suite: basic
+description: Starter suite. Swap the mock provider for a real one when ready.
+
+defaults:
+  samples: 3
+  timeout: 30s
+
+providers:
+  mock:
+    kind: mock
+
+targets:
+  current:
+    provider: mock
+    model: mock-good
+
+prompts:
+  greet: file://prompts/greet.md
+
+tests:
+  - id: greeting
+    prompt: greet
+    vars: { name: Ada }
+    assert:
+      - kind: contains
+        value: Ada
+      - not:
+          kind: regex
+          pattern: "(?i)as an ai"
+
+gates:
+  baseline: examples/suites/basic.baseline.json
+  alpha: 0.05
+  min_effect: 0.03

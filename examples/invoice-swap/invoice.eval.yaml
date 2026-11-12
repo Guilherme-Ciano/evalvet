@@ -1,0 +1,66 @@
+version: 1
+suite: invoice-swap
+description: Can invoice extraction move from Claude Sonnet 5.5 to Haiku 5.5? Non-inferiority within 3 points, with GPT-5 mini as a cross-vendor point. Needs real API keys; budget-capped.
+
+defaults:
+  samples: 5
+  timeout: 90s
+
+providers:
+  anthropic:
+    kind: anthropic
+    api_key_env: ANTHROPIC_API_KEY
+    limits: { rpm: 50, tpm: 200000, concurrency: 8 }
+  openai:
+    kind: openai
+    api_key_env: OPENAI_API_KEY
+    limits: { rpm: 500, tpm: 2000000, concurrency: 16 }
+
+targets:
+  sonnet:
+    provider: anthropic
+    model: claude-sonnet-5-5
+    params: { max_tokens: 2048, anthropic: { effort: medium } }
+  haiku:
+    provider: anthropic
+    model: claude-haiku-5-5
+    params: { max_tokens: 2048, anthropic: { effort: low } }
+  gpt-mini:
+    provider: openai
+    model: gpt-5-mini
+    params: { max_tokens: 2048, openai: { reasoning_effort: minimal } }
+
+prompts:
+  extract: file://../demo/prompts/extract_invoice.md
+
+tests:
+  - id: invoice
+    prompt: extract
+    each: file://../demo/fixtures/invoices.jsonl
+    assert:
+      - kind: json_schema
+        schema: file://../demo/schemas/invoice.json
+      - kind: json_path
+        path: $.total
+        equals: "{{ .expected.total }}"
+      - kind: json_path
+        path: $.vendor.vat_id
+        equals: "{{ .expected.vat_id }}"
+
+matrix:
+  targets: [sonnet, haiku, gpt-mini]
+
+compare:
+  - base: sonnet
+    head: haiku
+    mode: noninferiority
+    margin: 0.03
+  - base: sonnet
+    head: gpt-mini
+    mode: noninferiority
+    margin: 0.03
+
+gates:
+  alpha: 0.05
+  min_effect: 0.03
+  max_error_rate: 0.05

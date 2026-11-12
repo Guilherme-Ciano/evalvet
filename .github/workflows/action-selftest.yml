@@ -1,0 +1,22 @@
+name: action-selftest
+on:
+  workflow_dispatch:
+  release: { types: [published] }
+permissions:
+  contents: read
+jobs:
+  selftest:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: evalvet
+        uses: ./
+        with:
+          suites: examples/suites/basic.eval.yaml
+          args: --no-baseline
+          comment: "false"
+      - shell: bash
+        run: test "${{ steps.evalvet.outputs.verdict }}" = "pass"

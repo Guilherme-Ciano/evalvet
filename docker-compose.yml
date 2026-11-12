@@ -1,0 +1,23 @@
+name: evalvet-demo
+services:
+  mockprovider:
+    build: { context: ., target: mockprovider }
+    command: ["-addr", ":8080", "-latency", "30ms", "-jitter", "15ms"]
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/mockprovider", "healthcheck", "http://127.0.0.1:8080/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+  evalvet:
+    build: { context: ., target: evalvet }
+    depends_on:
+      mockprovider: { condition: service_healthy }
+    environment:
+      MOCK_URL: http://mockprovider:8080
+      DEMO_MODEL: ${DEMO_MODEL:-mock-regressed}
+    volumes:
+      - ./examples:/work/examples:ro
+      - evalvet-out:/work/out
+    command: ["run", "examples/demo/demo.eval.yaml", "--cache", "off", "--out", "out", "--format", "table,md"]
+volumes:
+  evalvet-out:

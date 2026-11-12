@@ -1,0 +1,25 @@
+name: evals
+on:
+  pull_request:
+    paths: ["evals/**", "prompts/**"]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  evalvet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: evalvet
+        uses: Guilherme-Ciano/evalvet@v0
+        with:
+          suites: evals/*.eval.yaml
+          args: --budget-usd 2
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: evalvet-report
+          path: .evalvet/out

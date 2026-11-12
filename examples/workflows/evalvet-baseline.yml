@@ -1,0 +1,30 @@
+name: evals-baseline
+on:
+  push:
+    branches: [main]
+    paths: ["evals/**", "prompts/**"]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Guilherme-Ciano/evalvet@v0
+        with:
+          suites: evals/*.eval.yaml
+          args: --no-baseline --cache rw
+          comment: "false"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - shell: bash
+        run: |
+          evalvet baseline save --in .evalvet/out/results.json
+          git switch -c evalvet/baseline-${{ github.sha }}
+          git add .evalvet/baselines
+          git -c user.name=evalvet -c user.email=evalvet@users.noreply.github.com commit -m "chore: update evalvet baseline"
+          git push origin HEAD
+          gh pr create --fill --title "chore: update evalvet baseline"
+        env:
+          GH_TOKEN: ${{ github.token }}

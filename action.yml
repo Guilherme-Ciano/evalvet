@@ -1,0 +1,71 @@
+name: evalvet
+description: Statistical regression tests for prompts and agents. Runs the evalvet binary and posts a sticky PR comment.
+author: Guilherme-Ciano
+branding: { icon: check-circle, color: green }
+inputs:
+  version:
+    description: evalvet release tag, or latest
+    default: latest
+  suites:
+    description: suite files or globs, space separated
+    default: "evals/*.eval.yaml"
+  args:
+    description: extra arguments for evalvet run
+    default: ""
+  cache:
+    description: restore and save the content-addressed response cache with actions/cache
+    default: "true"
+  comment:
+    description: create or update the sticky PR comment
+    default: "true"
+  github-token:
+    description: token used for the PR comment
+    default: ${{ github.token }}
+outputs:
+  verdict:
+    description: pass, regression or error
+    value: ${{ steps.run.outputs.verdict }}
+  report-path:
+    description: path of the Markdown report
+    value: ${{ steps.run.outputs.report }}
+runs:
+  using: composite
+  steps:
+    - if: runner.os != 'Windows'
+      shell: bash
+      run: '"$GITHUB_ACTION_PATH/scripts/install.sh"'
+      env:
+        EVALVET_VERSION: ${{ inputs.version }}
+    - if: runner.os == 'Windows'
+      shell: pwsh
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/install.ps1"'
+      env:
+        EVALVET_VERSION: ${{ inputs.version }}
+    - if: inputs.cache == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .evalvet/cache
+        key: evalvet-${{ runner.os }}-${{ hashFiles('**/*.eval.yaml', '**/prompts/**') }}
+        restore-keys: evalvet-${{ runner.os }}-
+    - id: run
+      shell: bash
+      env:
+        SUITES: ${{ inputs.suites }}
+        ARGS: ${{ inputs.args }}
+        FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+      run: |
+        extra=()
+        if [ "$FORK" = "true" ]; then
+          echo "::notice::fork pull request without secrets: running evalvet in --cache replay mode"
+          extra+=(--cache replay)
+        fi
+        set -f
+        read -r -a args <<< "$ARGS"
+        set +f
+        evalvet run $SUITES --ci --out .evalvet/out "${extra[@]}" "${args[@]}"
+    - if: always() && inputs.comment == 'true' && github.event_name == 'pull_request'
+      shell: bash
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: evalvet report --in .evalvet/out --format none --github-comment

@@ -1,0 +1,6 @@
+FROM gcr.io/distroless/static-debian13:nonroot
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/evalvet /usr/local/bin/evalvet
+WORKDIR /work
+USER 65532:65532
+ENTRYPOINT ["/usr/local/bin/evalvet"]

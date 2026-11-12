@@ -1,0 +1,6 @@
+bin
+dist
+.git
+.evalvet
+bench/results
+cover.out
