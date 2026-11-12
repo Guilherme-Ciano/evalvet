@@ -101,7 +101,7 @@ func normalizeNumber(n json.Number) (string, error) {
 	if math.IsInf(f, 0) || math.IsNaN(f) {
 		return "", fmt.Errorf("canonical number %q: %w", n, errNonFinite)
 	}
-	if f == math.Trunc(f) && math.Abs(f) < 1e15 {
+	if f == math.Trunc(f) && math.Abs(f) < 9.2e18 {
 		return strconv.FormatInt(int64(f), 10), nil
 	}
 	return strconv.FormatFloat(f, 'g', -1, 64), nil
