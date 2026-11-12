@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 
 	"github.com/ohler55/ojg/jp"
 	"github.com/santhosh-tekuri/jsonschema/v6"
@@ -65,6 +66,36 @@ func firstLine(s string) string {
 	return s
 }
 
+func checkPath(spec config.AssertSpec, re *regexp.Regexp, results []any) Result {
+	const kind = "json_path"
+	if spec.Exists != nil && !*spec.Exists {
+		if len(results) > 0 {
+			return fail(kind, "%s exists", spec.Path)
+		}
+		return pass(kind)
+	}
+	if len(results) == 0 {
+		return fail(kind, "%s not found", spec.Path)
+	}
+	switch {
+	case spec.Equals != nil:
+		if slices.ContainsFunc(results, func(r any) bool { return match.Equal(r, spec.Equals) }) {
+			return pass(kind)
+		}
+		return fail(kind, "%s: %v ≠ %v", spec.Path, results[0], spec.Equals)
+	case re != nil:
+		ok := slices.ContainsFunc(results, func(r any) bool {
+			s, isStr := r.(string)
+			return isStr && re.MatchString(s)
+		})
+		if ok {
+			return pass(kind)
+		}
+		return fail(kind, "%s: %v does not match %s", spec.Path, results[0], spec.Regex)
+	}
+	return pass(kind)
+}
+
 func compileJSONPath(spec config.AssertSpec) (Assertion, error) {
 	expr, err := jp.ParseString(spec.Path)
 	if err != nil {
@@ -85,33 +116,7 @@ func compileJSONPath(spec config.AssertSpec) (Assertion, error) {
 		if err != nil {
 			return fail("json_path", "%v", err)
 		}
-		results := expr.Get(plain)
-		if spec.Exists != nil && !*spec.Exists {
-			if len(results) > 0 {
-				return fail("json_path", "%s exists", spec.Path)
-			}
-			return pass("json_path")
-		}
-		if len(results) == 0 {
-			return fail("json_path", "%s not found", spec.Path)
-		}
-		if spec.Equals != nil {
-			for _, r := range results {
-				if match.Equal(r, spec.Equals) {
-					return pass("json_path")
-				}
-			}
-			return fail("json_path", "%s: %v ≠ %v", spec.Path, results[0], spec.Equals)
-		}
-		if re != nil {
-			for _, r := range results {
-				if s, ok := r.(string); ok && re.MatchString(s) {
-					return pass("json_path")
-				}
-			}
-			return fail("json_path", "%s: %v does not match %s", spec.Path, results[0], spec.Regex)
-		}
-		return pass("json_path")
+		return checkPath(spec, re, expr.Get(plain))
 	}), nil
 }
 

@@ -28,7 +28,6 @@ type Gate struct {
 
 	mu    sync.Mutex
 	until time.Time
-	wake  chan struct{}
 
 	throttled int64
 }
@@ -145,7 +144,14 @@ func (b *Budget) Reserve(est float64) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.spent+b.reserved+est > b.limit {
-		return fmt.Errorf("spent $%.4f + reserved $%.4f + next $%.4f > $%.2f: %w", b.spent, b.reserved, est, b.limit, domain.ErrBudgetExceeded)
+		return fmt.Errorf(
+			"spent $%.4f + reserved $%.4f + next $%.4f > $%.2f: %w",
+			b.spent,
+			b.reserved,
+			est,
+			b.limit,
+			domain.ErrBudgetExceeded,
+		)
 	}
 	b.reserved += est
 	return nil
@@ -196,7 +202,15 @@ func Wrap(inner domain.Provider, gate *Gate, o Options) *Gated {
 	if o.Backoff <= 0 {
 		o.Backoff = 500 * time.Millisecond
 	}
-	return &Gated{inner: inner, gate: gate, budget: o.Budget, estimate: o.Estimate, price: o.Price, maxRetries: o.MaxRetries, backoff: o.Backoff}
+	return &Gated{
+		inner:      inner,
+		gate:       gate,
+		budget:     o.Budget,
+		estimate:   o.Estimate,
+		price:      o.Price,
+		maxRetries: o.MaxRetries,
+		backoff:    o.Backoff,
+	}
 }
 
 func (g *Gated) Name() string { return g.inner.Name() }

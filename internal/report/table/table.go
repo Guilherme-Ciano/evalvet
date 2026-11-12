@@ -32,7 +32,17 @@ func Write(w io.Writer, r domain.RunResult) error {
 			if shown == 5 || cd.HeadPasses*cd.BaseN >= cd.BasePasses*cd.HeadN {
 				continue
 			}
-			fmt.Fprintf(w, "    %-28s %d/%d → %d/%d  p_adj=%s  %s\n", cd.CaseID, cd.BasePasses, cd.BaseN, cd.HeadPasses, cd.HeadN, format.P(cd.PAdjusted), cd.FirstFailure)
+			fmt.Fprintf(
+				w,
+				"    %-28s %d/%d → %d/%d  p_adj=%s  %s\n",
+				cd.CaseID,
+				cd.BasePasses,
+				cd.BaseN,
+				cd.HeadPasses,
+				cd.HeadN,
+				format.P(cd.PAdjusted),
+				cd.FirstFailure,
+			)
 			shown++
 		}
 	}

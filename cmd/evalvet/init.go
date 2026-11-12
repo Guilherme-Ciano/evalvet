@@ -264,7 +264,12 @@ func newInitCmd(c *cli) *cobra.Command {
 					suite = n
 				}
 			}
-			fmt.Fprintf(c.streams.Out, "\nnext: evalvet run %s --save-baseline .evalvet/baselines/%s.json\n", filepath.Join(dir, suite), tmpl)
+			fmt.Fprintf(
+				c.streams.Out,
+				"\nnext: evalvet run %s --save-baseline .evalvet/baselines/%s.json\n",
+				filepath.Join(dir, suite),
+				tmpl,
+			)
 			return nil
 		},
 	}

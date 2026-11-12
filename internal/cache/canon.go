@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math"
-	"sort"
+	"slices"
 	"strconv"
 )
 
@@ -49,37 +50,43 @@ func writeCanonical(buf *bytes.Buffer, v any) error {
 	case string:
 		writeString(buf, x)
 	case []any:
-		buf.WriteByte('[')
-		for i, e := range x {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			if err := writeCanonical(buf, e); err != nil {
-				return err
-			}
-		}
-		buf.WriteByte(']')
+		return writeArray(buf, x)
 	case map[string]any:
-		keys := make([]string, 0, len(x))
-		for k := range x {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		buf.WriteByte('{')
-		for i, k := range keys {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			writeString(buf, k)
-			buf.WriteByte(':')
-			if err := writeCanonical(buf, x[k]); err != nil {
-				return err
-			}
-		}
-		buf.WriteByte('}')
+		return writeObject(buf, x)
 	default:
-		return fmt.Errorf("canonical: unexpected type %T", v)
+		return fmt.Errorf("canonical: unexpected type %T: %w", v, errUnexpected)
 	}
+	return nil
+}
+
+func writeArray(buf *bytes.Buffer, x []any) error {
+	buf.WriteByte('[')
+	for i, e := range x {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		if err := writeCanonical(buf, e); err != nil {
+			return err
+		}
+	}
+	buf.WriteByte(']')
+	return nil
+}
+
+func writeObject(buf *bytes.Buffer, x map[string]any) error {
+	keys := slices.Sorted(maps.Keys(x))
+	buf.WriteByte('{')
+	for i, k := range keys {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		writeString(buf, k)
+		buf.WriteByte(':')
+		if err := writeCanonical(buf, x[k]); err != nil {
+			return err
+		}
+	}
+	buf.WriteByte('}')
 	return nil
 }
 

@@ -19,8 +19,9 @@ import (
 const SchemaVersion = 1
 
 var (
-	errTrailing  = errors.New("trailing data")
-	errNonFinite = errors.New("non-finite number")
+	errTrailing   = errors.New("trailing data")
+	errNonFinite  = errors.New("non-finite number")
+	errUnexpected = errors.New("unexpected JSON type")
 )
 
 type Mode string

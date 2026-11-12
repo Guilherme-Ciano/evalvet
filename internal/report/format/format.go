@@ -3,15 +3,15 @@ package format
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Guilherme-Ciano/evalvet/internal/domain"
 )
 
-func clean(v float64, digits int) float64 {
-	p := math.Pow(10, float64(digits))
-	r := math.Round(v*p) / p
+func clean(v float64) float64 {
+	r := math.Round(v*100) / 100
 	if r == 0 {
 		return 0
 	}
@@ -19,11 +19,11 @@ func clean(v float64, digits int) float64 {
 }
 
 func Rate(v float64) string {
-	return fmt.Sprintf("%.2f", clean(v, 2))
+	return fmt.Sprintf("%.2f", clean(v))
 }
 
 func Signed(v float64) string {
-	v = clean(v, 2)
+	v = clean(v)
 	switch {
 	case v > 0:
 		return fmt.Sprintf("+%.2f", v)
@@ -41,7 +41,7 @@ func P(p float64) string {
 	case p < 0.01:
 		return fmt.Sprintf("%.3f", p)
 	default:
-		return fmt.Sprintf("%.2f", clean(p, 2))
+		return fmt.Sprintf("%.2f", clean(p))
 	}
 }
 
@@ -49,7 +49,7 @@ func Cost(c *float64) string {
 	if c == nil {
 		return "n/a"
 	}
-	return fmt.Sprintf("$%.2f", clean(*c, 2))
+	return fmt.Sprintf("$%.2f", clean(*c))
 }
 
 func Pct(base, head *float64) string {
@@ -99,7 +99,7 @@ func VerdictIcon(v domain.Verdict) string {
 func CompareLines(c domain.Comparison) (string, string) {
 	k := fmt.Sprintf("%.1f", c.MeanK)
 	if c.MeanK == math.Trunc(c.MeanK) {
-		k = fmt.Sprintf("%d", int(c.MeanK))
+		k = strconv.Itoa(int(c.MeanK))
 	}
 	first := fmt.Sprintf("pass rate %s → %s (Δ %s, 95%% CI [%s, %s]), p=%s, N=%d cases × k=%s · %s",
 		Rate(c.BasePassRate), Rate(c.HeadPassRate), Signed(c.Delta), Signed(c.CILow), Signed(c.CIHigh),

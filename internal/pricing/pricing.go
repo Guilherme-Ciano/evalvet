@@ -46,7 +46,12 @@ func Parse(raw []byte) (Table, error) {
 			return Table{}, fmt.Errorf("pricing models[%d]: provider and model are required: %w", i, domain.ErrConfig)
 		}
 		if _, err := time.Parse(time.DateOnly, e.EffectiveFrom); err != nil {
-			return Table{}, fmt.Errorf("pricing models[%d]: effective_from %q: %w", i, e.EffectiveFrom, domain.ErrConfig)
+			return Table{}, fmt.Errorf(
+				"pricing models[%d]: effective_from %q: %w",
+				i,
+				e.EffectiveFrom,
+				domain.ErrConfig,
+			)
 		}
 	}
 	return t, nil
@@ -69,24 +74,29 @@ func Merge(base, override Table) Table {
 	return out
 }
 
+func (t Table) best(provider, model, day string) (Entry, bool) {
+	var (
+		best  Entry
+		found bool
+	)
+	for i := range t.Models {
+		e := &t.Models[i]
+		if e.Provider != provider || e.Model != model || e.EffectiveFrom > day {
+			continue
+		}
+		if !found || e.EffectiveFrom >= best.EffectiveFrom {
+			best, found = *e, true
+		}
+	}
+	return best, found
+}
+
 func (t Table) Lookup(providers []string, model string, at time.Time) (Entry, bool) {
 	day := at.UTC().Format(time.DateOnly)
-	for _, exact := range []bool{true, false} {
+	for _, m := range []string{model, "*"} {
 		for _, prov := range providers {
-			best, found := Entry{}, false
-			for _, e := range t.Models {
-				if e.Provider != prov || e.EffectiveFrom > day {
-					continue
-				}
-				if exact && e.Model != model || !exact && e.Model != "*" {
-					continue
-				}
-				if !found || e.EffectiveFrom >= best.EffectiveFrom {
-					best, found = e, true
-				}
-			}
-			if found {
-				return best, true
+			if e, ok := t.best(prov, m, day); ok {
+				return e, true
 			}
 		}
 	}

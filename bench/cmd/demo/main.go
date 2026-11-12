@@ -20,17 +20,18 @@ func run(ctx context.Context, bin, suite, model string) (int, error) {
 		return 2, fmt.Errorf("listen: %w", err)
 	}
 	srv := &http.Server{
-		Handler:           mockllm.NewServer(mockllm.ServerOptions{Latency: 20 * time.Millisecond, Jitter: 10 * time.Millisecond}).Handler(),
+		Handler: mockllm.NewServer(mockllm.ServerOptions{Latency: 20 * time.Millisecond, Jitter: 10 * time.Millisecond}).
+			Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
-	go func() { _ = srv.Serve(ln) }()
+	serveErr := make(chan error, 1)
+	go func() { serveErr <- srv.Serve(ln) }()
 	defer func() { _ = srv.Close() }()
 	cmd := exec.CommandContext(ctx, bin, "run", suite, "--cache", "off")
 	cmd.Env = append(os.Environ(), "MOCK_URL=http://"+ln.Addr().String(), "DEMO_MODEL="+model)
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	err = cmd.Run()
-	var exit *exec.ExitError
-	if errors.As(err, &exit) {
+	if exit, ok := errors.AsType[*exec.ExitError](err); ok {
 		return exit.ExitCode(), nil
 	}
 	if err != nil {

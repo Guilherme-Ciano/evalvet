@@ -60,69 +60,83 @@ func readResults(in string) ([]domain.RunResult, error) {
 	return out, nil
 }
 
+type reportFlags struct {
+	in          string
+	format      string
+	comment     bool
+	stepSummary bool
+	annotations bool
+}
+
+func (c *cli) writeFormat(name string, md []byte, r domain.RunResult) error {
+	var err error
+	switch name {
+	case "md", "markdown":
+		_, err = c.streams.Out.Write(md)
+	case formatTable:
+		err = table.Write(c.streams.Out, r)
+	case "junit":
+		err = junit.Write(c.streams.Out, r)
+	case formatJSON:
+		err = jsonr.Write(c.streams.Out, r)
+	case "none":
+	default:
+		return usageError("unknown format %q", name)
+	}
+	if err != nil {
+		return fmt.Errorf("write %s: %w", name, err)
+	}
+	return nil
+}
+
+func (c *cli) renderReport(cmd *cobra.Command, r domain.RunResult, f *reportFlags) error {
+	var md bytes.Buffer
+	if err := markdown.Write(&md, r); err != nil {
+		return err
+	}
+	if err := c.writeFormat(f.format, md.Bytes(), r); err != nil {
+		return err
+	}
+	if f.annotations {
+		if err := github.Annotations(c.streams.Out, r); err != nil {
+			return err
+		}
+	}
+	if p := c.getenv("GITHUB_STEP_SUMMARY"); f.stepSummary && p != "" {
+		if err := github.AppendStepSummary(p, md.String()); err != nil {
+			return err
+		}
+	}
+	if f.comment {
+		return c.postComment(cmd, r.Suite, md.String())
+	}
+	return nil
+}
+
 func newReportCmd(c *cli) *cobra.Command {
-	var (
-		in          string
-		formatName  string
-		comment     bool
-		stepSummary bool
-		annotations bool
-	)
+	f := &reportFlags{}
 	cmd := &cobra.Command{
 		Use:   "report",
 		Short: "Render a results.json as table, Markdown, JUnit or JSON, or post it as a sticky PR comment",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			results, err := readResults(in)
+			results, err := readResults(f.in)
 			if err != nil {
 				return err
 			}
-			for _, r := range results {
-				var md bytes.Buffer
-				if err := markdown.Write(&md, r); err != nil {
+			for i := range results {
+				if err := c.renderReport(cmd, results[i], f); err != nil {
 					return err
-				}
-				switch formatName {
-				case "md", "markdown":
-					_, err = c.streams.Out.Write(md.Bytes())
-				case "table":
-					err = table.Write(c.streams.Out, r)
-				case "junit":
-					err = junit.Write(c.streams.Out, r)
-				case "json":
-					err = jsonr.Write(c.streams.Out, r)
-				case "none":
-				default:
-					err = usageError("unknown format %q", formatName)
-				}
-				if err != nil {
-					return err
-				}
-				if annotations {
-					if err := github.Annotations(c.streams.Out, r); err != nil {
-						return err
-					}
-				}
-				if stepSummary {
-					if p := c.getenv("GITHUB_STEP_SUMMARY"); p != "" {
-						if err := github.AppendStepSummary(p, md.String()); err != nil {
-							return err
-						}
-					}
-				}
-				if comment {
-					if err := c.postComment(cmd, r.Suite, md.String()); err != nil {
-						return err
-					}
 				}
 			}
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&in, "in", ".evalvet/out", "results.json file or a directory containing them")
-	cmd.Flags().StringVar(&formatName, "format", "md", "output format: md, table, junit, json or none")
-	cmd.Flags().BoolVar(&comment, "github-comment", false, "create or update the sticky PR comment (needs GITHUB_TOKEN)")
-	cmd.Flags().BoolVar(&stepSummary, "step-summary", false, "append the Markdown report to GITHUB_STEP_SUMMARY")
-	cmd.Flags().BoolVar(&annotations, "annotations", false, "print ::error annotations for regressed cases")
+	cmd.Flags().StringVar(&f.in, "in", ".evalvet/out", "results.json file or a directory containing them")
+	cmd.Flags().StringVar(&f.format, "format", "md", "output format: md, table, junit, json or none")
+	cmd.Flags().
+		BoolVar(&f.comment, "github-comment", false, "create or update the sticky PR comment (needs GITHUB_TOKEN)")
+	cmd.Flags().BoolVar(&f.stepSummary, "step-summary", false, "append the Markdown report to GITHUB_STEP_SUMMARY")
+	cmd.Flags().BoolVar(&f.annotations, "annotations", false, "print ::error annotations for regressed cases")
 	return cmd
 }
 

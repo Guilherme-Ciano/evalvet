@@ -40,7 +40,12 @@ func TestRender(t *testing.T) {
 
 func TestRenderErrors(t *testing.T) {
 	t.Parallel()
-	if _, err := Render("t", "{{ .missing }}", map[string]any{}); err == nil || !strings.Contains(err.Error(), "missing") {
+	if _, err := Render(
+		"t",
+		"{{ .missing }}",
+		map[string]any{},
+	); err == nil ||
+		!strings.Contains(err.Error(), "missing") {
 		t.Fatalf("want missingkey error, got %v", err)
 	}
 	if _, err := Render("t", "{{ .x ", nil); err == nil {

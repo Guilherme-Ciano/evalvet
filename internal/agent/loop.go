@@ -26,7 +26,7 @@ func Run(ctx context.Context, call Caller, req domain.Request, tools *Session, l
 	out := Outcome{Cached: true}
 	msgs := append([]domain.Message(nil), req.Messages...)
 	toolCalls := 0
-	for step := 0; step < lim.MaxSteps; step++ {
+	for range lim.MaxSteps {
 		r := req
 		r.Messages = msgs
 		resp, err := call(ctx, r)

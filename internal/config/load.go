@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -87,18 +88,15 @@ func yamlErrorLine(err error) int {
 }
 
 func (s *Suite) applyDefaults() {
-	if s.Defaults.Samples <= 0 {
-		s.Defaults.Samples = 3
+	d := &s.Defaults
+	d.Samples = positiveOr(d.Samples, 3)
+	if d.Timeout <= 0 {
+		d.Timeout = 60 * time.Second
 	}
-	if s.Defaults.Timeout <= 0 {
-		s.Defaults.Timeout = 60 * time.Second
+	if d.MaxTokens <= 0 {
+		d.MaxTokens = 1024
 	}
-	if s.Defaults.MaxTokens <= 0 {
-		s.Defaults.MaxTokens = 1024
-	}
-	if s.Defaults.Judge.Samples <= 0 {
-		s.Defaults.Judge.Samples = 1
-	}
+	d.Judge.Samples = positiveOr(d.Judge.Samples, 1)
 	if s.Gates.Alpha <= 0 {
 		s.Gates.Alpha = 0.05
 	}
@@ -115,20 +113,23 @@ func (s *Suite) applyDefaults() {
 	}
 	for name, t := range s.Targets {
 		if t.Params.MaxTokens <= 0 {
-			t.Params.MaxTokens = s.Defaults.MaxTokens
+			t.Params.MaxTokens = d.MaxTokens
 			s.Targets[name] = t
 		}
 	}
 	for i := range s.Tests {
-		if s.Tests[i].Agent != nil {
-			if s.Tests[i].Agent.MaxSteps <= 0 {
-				s.Tests[i].Agent.MaxSteps = 8
-			}
-			if s.Tests[i].Agent.MaxToolCalls <= 0 {
-				s.Tests[i].Agent.MaxToolCalls = 32
-			}
+		if a := s.Tests[i].Agent; a != nil {
+			a.MaxSteps = positiveOr(a.MaxSteps, 8)
+			a.MaxToolCalls = positiveOr(a.MaxToolCalls, 32)
 		}
 	}
+}
+
+func positiveOr(v, def int) int {
+	if v <= 0 {
+		return def
+	}
+	return v
 }
 
 func ExpandEnv(v string, env LookupEnv) string {
@@ -246,21 +247,21 @@ func (s *Suite) resolveAssertFiles(c *collector, path string, a *AssertSpec) {
 
 func (s *Suite) computeHash() string {
 	view := struct {
-		Version   int
-		Name      string
-		Defaults  Defaults
-		Providers map[string]Provider
-		Targets   map[string]Target
-		Prompts   map[string]string
-		Tools     map[string]Tool
-		Tests     []Test
-		Matrix    Matrix
-		Compare   []CompareSpec
-		Gates     Gates
+		Version   int                 `json:"version"`
+		Name      string              `json:"suite"`
+		Defaults  Defaults            `json:"defaults"`
+		Providers map[string]Provider `json:"providers"`
+		Targets   map[string]Target   `json:"targets"`
+		Prompts   map[string]string   `json:"prompts"`
+		Tools     map[string]Tool     `json:"tools"`
+		Tests     []Test              `json:"tests"`
+		Matrix    Matrix              `json:"matrix"`
+		Compare   []CompareSpec       `json:"compare"`
+		Gates     Gates               `json:"gates"`
 	}{s.Version, s.Name, s.Defaults, s.Providers, s.Targets, s.Prompts, s.Tools, s.Tests, s.Matrix, s.Compare, s.Gates}
-	b, err := json.Marshal(view)
+	b, err := canonicalJSON(view)
 	if err != nil {
-		b = []byte(fmt.Sprintf("%#v", view))
+		b = fmt.Appendf(nil, "%#v", view)
 	}
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
@@ -280,4 +281,14 @@ func (s *Suite) Seed() uint64 {
 
 func (s *Suite) MatrixTargets() []string {
 	return s.Matrix.Targets
+}
+
+func canonicalJSON(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, fmt.Errorf("encode suite: %w", err)
+	}
+	return buf.Bytes(), nil
 }

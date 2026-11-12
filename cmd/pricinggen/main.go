@@ -32,7 +32,14 @@ func generate(t pricing.Table) ([]byte, error) {
 	b.WriteString("func Builtin() Table {\n\treturn Table{\n")
 	fmt.Fprintf(&b, "\t\tVersion: %q,\n\t\tCurrency: %q,\n\t\tModels: []Entry{\n", t.Version, t.Currency)
 	for _, e := range t.Models {
-		fmt.Fprintf(&b, "\t\t\t{Provider: %q, Model: %q, EffectiveFrom: %q, PerMTok: %s", e.Provider, e.Model, e.EffectiveFrom, rates(e.PerMTok))
+		fmt.Fprintf(
+			&b,
+			"\t\t\t{Provider: %q, Model: %q, EffectiveFrom: %q, PerMTok: %s",
+			e.Provider,
+			e.Model,
+			e.EffectiveFrom,
+			rates(e.PerMTok),
+		)
 		if len(e.Tiers) > 0 {
 			b.WriteString(", Tiers: []Tier{")
 			for _, tier := range e.Tiers {

@@ -39,9 +39,9 @@ func TestWilsonReferenceValues(t *testing.T) {
 func TestFisherReferenceValues(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name               string
-		bp, bn, hp, hn     int
-		want, tol          float64
+		name           string
+		bp, bn, hp, hn int
+		want, tol      float64
 	}{
 		{"94/100 vs 81/100", 94, 100, 81, 100, 0.0046, 1e-4},
 		{"10/10 vs 5/10", 10, 10, 5, 10, 0.016254, 1e-5},

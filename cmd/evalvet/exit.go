@@ -37,8 +37,7 @@ func exitCode(err error) int {
 	if err == nil {
 		return ExitOK
 	}
-	var ee *ExitError
-	if errors.As(err, &ee) {
+	if ee, ok := errors.AsType[*ExitError](err); ok {
 		return ee.Code
 	}
 	switch {
@@ -48,7 +47,10 @@ func exitCode(err error) int {
 		return ExitInterrupted
 	case errors.Is(err, domain.ErrConfig), errors.Is(err, baseline.ErrNotFound):
 		return ExitUsage
-	case errors.Is(err, domain.ErrAuth), errors.Is(err, domain.ErrCacheMiss), errors.Is(err, transport.ErrReplayMiss), errors.Is(err, domain.ErrProvider):
+	case errors.Is(err, domain.ErrAuth),
+		errors.Is(err, domain.ErrCacheMiss),
+		errors.Is(err, transport.ErrReplayMiss),
+		errors.Is(err, domain.ErrProvider):
 		return ExitInfra
 	default:
 		return ExitInfra
@@ -58,3 +60,8 @@ func exitCode(err error) int {
 func usageError(format string, args ...any) error {
 	return &ExitError{Code: ExitUsage, Err: fmt.Errorf(format, args...)}
 }
+
+const (
+	formatTable = "table"
+	formatJSON  = "json"
+)

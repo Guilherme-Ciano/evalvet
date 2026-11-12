@@ -63,17 +63,33 @@ func Write(w io.Writer, r domain.RunResult) error {
 			tc := testcase{Name: cs.CaseID, Classname: r.Suite + "." + t.Target, Time: "0"}
 			switch {
 			case cs.N == 0 && cs.Errors > 0:
-				tc.Error = &failure{Message: fmt.Sprintf("%d trial(s) errored", cs.Errors), Type: "error", Body: cs.FirstFailure}
+				tc.Error = &failure{
+					Message: fmt.Sprintf("%d trial(s) errored", cs.Errors),
+					Type:    "error",
+					Body:    cs.FirstFailure,
+				}
 				ts.Errors++
 			case regressed[cs.CaseID].CaseID != "":
 				cd := regressed[cs.CaseID]
 				tc.Failure = &failure{
-					Message: fmt.Sprintf("regressed %d/%d → %d/%d (Holm p=%.4f)", cd.BasePasses, cd.BaseN, cd.HeadPasses, cd.HeadN, cd.PAdjusted),
-					Type:    "regression", Body: cs.FirstFailure,
+					Message: fmt.Sprintf(
+						"regressed %d/%d → %d/%d (Holm p=%.4f)",
+						cd.BasePasses,
+						cd.BaseN,
+						cd.HeadPasses,
+						cd.HeadN,
+						cd.PAdjusted,
+					),
+					Type: "regression",
+					Body: cs.FirstFailure,
 				}
 				ts.Failures++
 			case cs.N > 0 && cs.Passes*2 < cs.N:
-				tc.Failure = &failure{Message: fmt.Sprintf("%d/%d trials passed", cs.Passes, cs.N), Type: "assertion", Body: cs.FirstFailure}
+				tc.Failure = &failure{
+					Message: fmt.Sprintf("%d/%d trials passed", cs.Passes, cs.N),
+					Type:    "assertion",
+					Body:    cs.FirstFailure,
+				}
 				ts.Failures++
 			}
 			ts.Cases = append(ts.Cases, tc)

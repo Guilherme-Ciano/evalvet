@@ -53,7 +53,17 @@ func printPricing(c *cli, t pricing.Table) error {
 	tw := tabwriter.NewWriter(c.streams.Out, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(tw, "PROVIDER\tMODEL\tFROM\tINPUT\tCACHED\tOUTPUT\tTIERS")
 	for _, e := range t.Models {
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%.3f\t%s\t%.3f\t%d\n", e.Provider, e.Model, e.EffectiveFrom, e.PerMTok.Input, optRate(e.PerMTok.CachedInput), e.PerMTok.Output, len(e.Tiers))
+		fmt.Fprintf(
+			tw,
+			"%s\t%s\t%s\t%.3f\t%s\t%.3f\t%d\n",
+			e.Provider,
+			e.Model,
+			e.EffectiveFrom,
+			e.PerMTok.Input,
+			optRate(e.PerMTok.CachedInput),
+			e.PerMTok.Output,
+			len(e.Tiers),
+		)
 	}
 	if err := tw.Flush(); err != nil {
 		return fmt.Errorf("print pricing: %w", err)

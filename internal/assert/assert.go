@@ -53,11 +53,11 @@ type Deps struct {
 }
 
 func pass(kind string) Result {
-	return Result{AssertOutcome: domain.AssertOutcome{Kind: kind, Pass: true}}
+	return Result{Kind: kind, Pass: true}
 }
 
 func fail(kind, format string, args ...any) Result {
-	return Result{AssertOutcome: domain.AssertOutcome{Kind: kind, Reason: fmt.Sprintf(format, args...)}}
+	return Result{Kind: kind, Reason: fmt.Sprintf(format, args...)}
 }
 
 type funcAssertion struct {

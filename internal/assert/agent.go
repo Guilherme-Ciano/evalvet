@@ -20,6 +20,21 @@ func callArgs(c domain.ToolCall) map[string]any {
 	return m
 }
 
+func countCalls(traj domain.Trajectory, name string, argMatch match.Matcher) (n, firstStep int) {
+	for i, s := range traj.Steps {
+		for _, c := range s.Response.ToolCalls {
+			if c.Name != name || argMatch != nil && !argMatch(callArgs(c)) {
+				continue
+			}
+			n++
+			if firstStep == 0 {
+				firstStep = i + 1
+			}
+		}
+	}
+	return n, firstStep
+}
+
 func compileToolCalled(spec config.AssertSpec, wantCalled bool) (Assertion, error) {
 	kind := "tool_not_called"
 	if wantCalled {
@@ -42,28 +57,15 @@ func compileToolCalled(spec config.AssertSpec, wantCalled bool) (Assertion, erro
 	}
 	name := spec.Name
 	return simple(kind, func(in Input) Result {
-		n, firstStep := 0, 0
-		for i, s := range in.Trajectory.Steps {
-			for _, c := range s.Response.ToolCalls {
-				if c.Name != name || argMatch != nil && !argMatch(callArgs(c)) {
-					continue
-				}
-				n++
-				if firstStep == 0 {
-					firstStep = i + 1
-				}
-			}
-		}
-		if !wantCalled {
-			if n > 0 {
-				return fail(kind, "%s was called (step %d)", name, firstStep)
-			}
+		n, firstStep := countCalls(in.Trajectory, name, argMatch)
+		switch {
+		case !wantCalled && n > 0:
+			return fail(kind, "%s was called (step %d)", name, firstStep)
+		case !wantCalled:
 			return pass(kind)
-		}
-		if n < minTimes {
+		case n < minTimes:
 			return fail(kind, "%s called %d time(s), want at least %d", name, n, minTimes)
-		}
-		if maxTimes >= 0 && n > maxTimes {
+		case maxTimes >= 0 && n > maxTimes:
 			return fail(kind, "%s called %d time(s), want at most %d", name, n, maxTimes)
 		}
 		return pass(kind)
@@ -74,8 +76,9 @@ func compileToolOrder(spec config.AssertSpec) Assertion {
 	seq := slices.Clone(spec.Sequence)
 	strict := spec.Strict
 	return simple("tool_order", func(in Input) Result {
-		var names []string
-		for _, c := range in.Trajectory.ToolCalls() {
+		calls := in.Trajectory.ToolCalls()
+		names := make([]string, 0, len(calls))
+		for _, c := range calls {
 			names = append(names, c.Name)
 		}
 		if strict {
@@ -129,12 +132,19 @@ func compileJudge(spec config.AssertSpec, deps Deps) (Assertion, error) {
 	}
 	target := spec.Target
 	return funcAssertion{kind: "judge", fn: func(ctx context.Context, in Input) (Result, error) {
-		v, err := deps.Judge.Judge(ctx, JudgeRequest{CaseID: in.CaseID, Output: in.Output, Rubric: rubric, Target: target, Samples: samples})
+		v, err := deps.Judge.Judge(
+			ctx,
+			JudgeRequest{CaseID: in.CaseID, Output: in.Output, Rubric: rubric, Target: target, Samples: samples},
+		)
 		if err != nil {
 			return Result{}, err
 		}
 		score := v.Score
-		r := Result{AssertOutcome: domain.AssertOutcome{Kind: "judge", Pass: v.Pass, Score: &score, Reason: v.Reason}, Usage: v.Usage, CostUSD: v.CostUSD}
+		r := Result{
+			Kind: "judge", Pass: v.Pass, Score: &score, Reason: v.Reason,
+			Usage:   v.Usage,
+			CostUSD: v.CostUSD,
+		}
 		return r, nil
 	}}, nil
 }

@@ -53,7 +53,7 @@ type Timing struct {
 func (t Timing) RoundTrip(req *http.Request) (*http.Response, error) {
 	rec, ok := recorderFrom(req.Context())
 	if !ok {
-		return t.Next.RoundTrip(req)
+		return roundTrip(t.Next, req)
 	}
 	start := time.Now()
 	trace := &httptrace.ClientTrace{
@@ -64,7 +64,15 @@ func (t Timing) RoundTrip(req *http.Request) (*http.Response, error) {
 			rec.mu.Unlock()
 		},
 	}
-	return t.Next.RoundTrip(req.WithContext(httptrace.WithClientTrace(req.Context(), trace)))
+	return roundTrip(t.Next, req.WithContext(httptrace.WithClientTrace(req.Context(), trace)))
+}
+
+func roundTrip(next http.RoundTripper, req *http.Request) (*http.Response, error) {
+	resp, err := next.RoundTrip(req)
+	if err != nil {
+		return nil, fmt.Errorf("round trip: %w", err)
+	}
+	return resp, nil
 }
 
 type Fixture struct {
@@ -76,7 +84,18 @@ type Fixture struct {
 }
 
 func scrubbedHeaders() []string {
-	return []string{"Authorization", "X-Api-Key", "Cookie", "Set-Cookie", "Openai-Organization", "Openai-Project", "Anthropic-Organization-Id", "Request-Id", "X-Request-Id", "Cf-Ray"}
+	return []string{
+		"Authorization",
+		"X-Api-Key",
+		"Cookie",
+		"Set-Cookie",
+		"Openai-Organization",
+		"Openai-Project",
+		"Anthropic-Organization-Id",
+		"Request-Id",
+		"X-Request-Id",
+		"Cf-Ray",
+	}
 }
 
 func FixtureKey(method, path string, body []byte) string {
@@ -120,7 +139,7 @@ func (r Record) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := r.Next.RoundTrip(req)
+	resp, err := roundTrip(r.Next, req)
 	if err != nil {
 		return nil, err
 	}

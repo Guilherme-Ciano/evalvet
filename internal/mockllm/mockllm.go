@@ -7,6 +7,7 @@ import (
 	"hash/fnv"
 	"math"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -14,9 +15,13 @@ import (
 )
 
 const (
-	JudgeMarker   = "You are an evaluation judge."
-	RefusalMarker = "REFUSE_ME"
-	TrialHeader   = "Evalvet-Trial-Id"
+	keyName         = "name"
+	argOrderID      = "order_id"
+	argReason       = "reason"
+	toolIssueRefund = "issue_refund"
+	JudgeMarker     = "You are an evaluation judge."
+	RefusalMarker   = "REFUSE_ME"
+	TrialHeader     = "Evalvet-Trial-Id"
 )
 
 type profile struct {
@@ -55,11 +60,11 @@ func TrialID(caseID string, sample int) string {
 }
 
 func splitTrial(trial string) (string, string) {
-	i := strings.LastIndexByte(trial, '@')
-	if i < 0 {
+	caseID, sample, ok := strings.CutLast(trial, "@")
+	if !ok {
 		return trial, "0"
 	}
-	return trial[:i], trial[i+1:]
+	return caseID, sample
 }
 
 func unit(parts ...string) float64 {
@@ -148,9 +153,9 @@ func truncate(s string, n int) string {
 }
 
 func lastUser(req domain.Request) string {
-	for i := len(req.Messages) - 1; i >= 0; i-- {
-		if req.Messages[i].Role == domain.RoleUser && req.Messages[i].Content != "" {
-			return req.Messages[i].Content
+	for _, m := range slices.Backward(req.Messages) {
+		if m.Role == domain.RoleUser && m.Content != "" {
+			return m.Content
 		}
 	}
 	return ""
@@ -199,7 +204,7 @@ func extract(text string, p profile, caseID, sample string) domain.Response {
 	}
 	out := map[string]any{
 		"vendor": map[string]any{
-			"name":   invoiceField(text, "Vendor"),
+			keyName:  invoiceField(text, "Vendor"),
 			"vat_id": invoiceField(text, "VAT ID"),
 		},
 		"total":    total,
@@ -262,27 +267,18 @@ func (e *Engine) agentStep(req domain.Request, p profile, caseID, sample string)
 		return final("Could you share your order number?")
 	}
 	if len(events) == 0 {
-		return call(id, "lookup_order", map[string]any{"order_id": order})
+		return call(id, "lookup_order", map[string]any{argOrderID: order})
 	}
 	last := events[len(events)-1]
 	switch last.name {
 	case "lookup_order":
-		if last.isError || strings.Contains(last.content, "not_found") {
-			if unit("wrong_refund", caseID, sample) < p.wrongRefund && hasTool(req, "issue_refund") {
-				return call(id, "issue_refund", map[string]any{"order_id": order, "reason": "customer request"})
-			}
-			return final(fmt.Sprintf("I'm sorry, I could not find order %s. Please double-check the number.", order))
-		}
-		if unit("skip_policy", caseID, sample) >= p.skipPolicy && hasTool(req, "check_refund_policy") {
-			return call(id, "check_refund_policy", map[string]any{"order_id": order})
-		}
-		return call(id, "issue_refund", map[string]any{"order_id": order, "reason": "damaged"})
+		return afterLookup(req, last, p, id, order, caseID, sample)
 	case "check_refund_policy":
 		if strings.Contains(last.content, `"eligible":false`) {
 			return final(fmt.Sprintf("Order %s is not eligible for a refund under the current policy.", order))
 		}
-		return call(id, "issue_refund", map[string]any{"order_id": order, "reason": "damaged"})
-	case "issue_refund":
+		return call(id, toolIssueRefund, map[string]any{argOrderID: order, argReason: "damaged"})
+	case toolIssueRefund:
 		ref := "the refund"
 		var m map[string]any
 		if json.Unmarshal([]byte(last.content), &m) == nil {
@@ -358,4 +354,17 @@ func (e *Engine) judge(req domain.Request) domain.Response {
 		return final("{}")
 	}
 	return final(string(b))
+}
+
+func afterLookup(req domain.Request, last toolEvent, p profile, id, order, caseID, sample string) domain.Response {
+	if last.isError || strings.Contains(last.content, "not_found") {
+		if unit("wrong_refund", caseID, sample) < p.wrongRefund && hasTool(req, toolIssueRefund) {
+			return call(id, toolIssueRefund, map[string]any{argOrderID: order, argReason: "customer request"})
+		}
+		return final(fmt.Sprintf("I'm sorry, I could not find order %s. Please double-check the number.", order))
+	}
+	if unit("skip_policy", caseID, sample) >= p.skipPolicy && hasTool(req, "check_refund_policy") {
+		return call(id, "check_refund_policy", map[string]any{argOrderID: order})
+	}
+	return call(id, toolIssueRefund, map[string]any{argOrderID: order, argReason: "damaged"})
 }

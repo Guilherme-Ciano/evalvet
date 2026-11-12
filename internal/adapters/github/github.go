@@ -75,18 +75,18 @@ type comment struct {
 	Body string `json:"body"`
 }
 
-func (c *Client) do(ctx context.Context, method, url string, body any, out any) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, method, url string, body, out any) error {
 	var rd io.Reader
 	if body != nil {
 		b, err := json.Marshal(body)
 		if err != nil {
-			return nil, fmt.Errorf("encode %s body: %w", method, err)
+			return fmt.Errorf("encode %s body: %w", method, err)
 		}
 		rd = bytes.NewReader(b)
 	}
 	req, err := http.NewRequestWithContext(ctx, method, url, rd)
 	if err != nil {
-		return nil, fmt.Errorf("new request: %w", err)
+		return fmt.Errorf("new request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+c.env.Token)
 	req.Header.Set("Accept", "application/vnd.github+json")
@@ -96,29 +96,35 @@ func (c *Client) do(ctx context.Context, method, url string, body any, out any) 
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%s %s: %w", method, url, err)
+		return fmt.Errorf("%s %s: %w", method, url, err)
 	}
 	defer resp.Body.Close()
 	data, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 	if err != nil {
-		return resp, fmt.Errorf("read response: %w", err)
+		return fmt.Errorf("read response: %w", err)
 	}
 	if resp.StatusCode >= 300 {
-		return resp, fmt.Errorf("%s %s: status %d: %s", method, url, resp.StatusCode, strings.TrimSpace(string(data)))
+		return fmt.Errorf("%s %s: status %d: %s", method, url, resp.StatusCode, strings.TrimSpace(string(data)))
 	}
 	if out != nil {
 		if err := json.Unmarshal(data, out); err != nil {
-			return resp, fmt.Errorf("decode response: %w", err)
+			return fmt.Errorf("decode response: %w", err)
 		}
 	}
-	return resp, nil
+	return nil
 }
 
 func (c *Client) findComment(ctx context.Context, pr int, marker string) (int64, error) {
 	for page := 1; page <= 50; page++ {
-		url := fmt.Sprintf("%s/repos/%s/issues/%d/comments?per_page=100&page=%d", c.env.APIURL, c.env.Repository, pr, page)
+		url := fmt.Sprintf(
+			"%s/repos/%s/issues/%d/comments?per_page=100&page=%d",
+			c.env.APIURL,
+			c.env.Repository,
+			pr,
+			page,
+		)
 		var list []comment
-		if _, err := c.do(ctx, http.MethodGet, url, nil, &list); err != nil {
+		if err := c.do(ctx, http.MethodGet, url, nil, &list); err != nil {
 			return 0, err
 		}
 		for _, cm := range list {
@@ -150,13 +156,13 @@ func (c *Client) UpsertComment(ctx context.Context, pr int, marker, body string)
 	var out comment
 	if id != 0 {
 		url := fmt.Sprintf("%s/repos/%s/issues/comments/%d", c.env.APIURL, c.env.Repository, id)
-		if _, err := c.do(ctx, http.MethodPatch, url, payload, &out); err != nil {
+		if err := c.do(ctx, http.MethodPatch, url, payload, &out); err != nil {
 			return Upsert{}, err
 		}
 		return Upsert{CommentID: out.ID}, nil
 	}
 	url := fmt.Sprintf("%s/repos/%s/issues/%d/comments", c.env.APIURL, c.env.Repository, pr)
-	if _, err := c.do(ctx, http.MethodPost, url, payload, &out); err != nil {
+	if err := c.do(ctx, http.MethodPost, url, payload, &out); err != nil {
 		return Upsert{}, err
 	}
 	return Upsert{CommentID: out.ID, Created: true}, nil
@@ -187,25 +193,38 @@ func Annotations(w io.Writer, r domain.RunResult) error {
 			if cd.Line > 0 {
 				line = fmt.Sprintf(",line=%d", cd.Line)
 			}
-			if _, err := fmt.Fprintf(w, "::error file=%s%s,title=%s::%s\n", escapeProperty(r.SuiteFile), line, escapeProperty("evalvet "+c.Name), escapeData(msg)); err != nil {
+			if _, err := fmt.Fprintf(
+				w,
+				"::error file=%s%s,title=%s::%s\n",
+				escapeProperty(r.SuiteFile),
+				line,
+				escapeProperty("evalvet "+c.Name),
+				escapeData(msg),
+			); err != nil {
 				return fmt.Errorf("write annotation: %w", err)
 			}
 		}
 	}
 	for _, g := range r.Gates {
-		if _, err := fmt.Fprintf(w, "::error file=%s,title=%s::%s\n", escapeProperty(r.SuiteFile), escapeProperty("evalvet gate "+g.Gate), escapeData(g.Target+": "+g.Message)); err != nil {
+		if _, err := fmt.Fprintf(
+			w,
+			"::error file=%s,title=%s::%s\n",
+			escapeProperty(r.SuiteFile),
+			escapeProperty("evalvet gate "+g.Gate),
+			escapeData(g.Target+": "+g.Message),
+		); err != nil {
 			return fmt.Errorf("write annotation: %w", err)
 		}
 	}
 	return nil
 }
 
-func AppendStepSummary(path string, body string) error {
+func AppendStepSummary(path, body string) error {
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("open step summary: %w", err)
 	}
-	_, wErr := io.WriteString(f, body+"\n")
+	_, wErr := f.WriteString(body + "\n")
 	cErr := f.Close()
 	if err := errors.Join(wErr, cErr); err != nil {
 		return fmt.Errorf("write step summary: %w", err)

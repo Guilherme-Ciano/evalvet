@@ -7,12 +7,18 @@ import (
 	"strings"
 )
 
+const (
+	kindNot      = "not"
+	kindJudge    = "judge"
+	kindMaxSteps = "max_steps"
+)
+
 func assertKindList() []string {
 	return []string{
-	"equals", "contains", "regex", "json_valid", "json_schema", "json_path",
-	"not", "cost_max", "latency_max", "not_refused",
-	"tool_called", "tool_not_called", "tool_order", "max_steps", "max_tool_calls",
-	"judge",
+		"equals", "contains", "regex", "json_valid", "json_schema", "json_path",
+		kindNot, "cost_max", "latency_max", "not_refused",
+		"tool_called", "tool_not_called", "tool_order", kindMaxSteps, "max_tool_calls",
+		kindJudge,
 	}
 }
 
@@ -22,7 +28,7 @@ func AssertKinds() []string {
 
 func agentKind(kind string) bool {
 	switch kind {
-	case "tool_called", "tool_not_called", "tool_order", "max_steps":
+	case "tool_called", "tool_not_called", "tool_order", kindMaxSteps:
 		return true
 	}
 	return false
@@ -33,7 +39,8 @@ func validName(s string) bool {
 		return false
 	}
 	for _, r := range s {
-		ok := r == '-' || r == '_' || r == '.' || (r >= '0' && r <= '9') || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+		ok := r == '-' || r == '_' || r == '.' || (r >= '0' && r <= '9') || (r >= 'a' && r <= 'z') ||
+			(r >= 'A' && r <= 'Z')
 		if !ok {
 			return false
 		}
@@ -85,11 +92,41 @@ func (s *Suite) validateProviders(c *collector) {
 			c.add(path+".kind", "unknown provider kind %q (want openai, openai_compatible, anthropic or mock)", p.Kind)
 		}
 		if p.APIKey != "" {
-			c.add(path+".api_key", "inline API keys are not allowed; set api_key_env to the name of an environment variable")
+			c.add(
+				path+".api_key",
+				"inline API keys are not allowed; set api_key_env to the name of an environment variable",
+			)
 		}
 		if p.Limits.RPM < 0 || p.Limits.TPM < 0 || p.Limits.Concurrency < 0 {
 			c.add(path+".limits", "limits must be non-negative")
 		}
+	}
+}
+
+func validateTargetParams(c *collector, path, kind string, t *Target) {
+	if kind == KindAnthropic {
+		if t.Params.Temperature != nil {
+			c.add(
+				path+".params.temperature",
+				"the Anthropic API rejects temperature since API version 2026-10-21; sample repeatedly instead and use params.anthropic.effort",
+			)
+		}
+		if t.Params.Seed != nil {
+			c.add(path+".params.seed", "seed is not supported by the Anthropic API")
+		}
+		if t.Params.OpenAI.ReasoningEffort != "" {
+			c.add(path+".params.openai", "openai params on an anthropic target")
+		}
+	} else if t.Params.Anthropic.Effort != "" {
+		c.add(path+".params.anthropic", "anthropic params on a %s target", kind)
+	}
+	if e := t.Params.Anthropic.Effort; e != "" &&
+		!slices.Contains([]string{"low", "medium", "high", "xhigh", "max"}, e) {
+		c.add(path+".params.anthropic.effort", "unknown effort %q", e)
+	}
+	if e := t.Params.OpenAI.ReasoningEffort; e != "" &&
+		!slices.Contains([]string{"none", "minimal", "low", "medium", "high", "xhigh", "max"}, e) {
+		c.add(path+".params.openai.reasoning_effort", "unknown reasoning_effort %q", e)
 	}
 }
 
@@ -111,25 +148,7 @@ func (s *Suite) validateTargets(c *collector) {
 		if t.Model == "" {
 			c.add(path+".model", "model is required")
 		}
-		if p.Kind == KindAnthropic {
-			if t.Params.Temperature != nil {
-				c.add(path+".params.temperature", "the Anthropic API rejects temperature since API version 2026-10-21; sample repeatedly instead and use params.anthropic.effort")
-			}
-			if t.Params.Seed != nil {
-				c.add(path+".params.seed", "seed is not supported by the Anthropic API")
-			}
-			if t.Params.OpenAI.ReasoningEffort != "" {
-				c.add(path+".params.openai", "openai params on an anthropic target")
-			}
-		} else if t.Params.Anthropic.Effort != "" {
-			c.add(path+".params.anthropic", "anthropic params on a %s target", p.Kind)
-		}
-		if e := t.Params.Anthropic.Effort; e != "" && !slices.Contains([]string{"low", "medium", "high", "xhigh", "max"}, e) {
-			c.add(path+".params.anthropic.effort", "unknown effort %q", e)
-		}
-		if e := t.Params.OpenAI.ReasoningEffort; e != "" && !slices.Contains([]string{"none", "minimal", "low", "medium", "high", "xhigh", "max"}, e) {
-			c.add(path+".params.openai.reasoning_effort", "unknown reasoning_effort %q", e)
-		}
+		validateTargetParams(c, path, p.Kind, &t)
 	}
 }
 
@@ -158,54 +177,89 @@ func (s *Suite) validateTools(c *collector) {
 	}
 }
 
+func (s *Suite) validateTest(c *collector, i int, t *Test, seen map[string]bool) bool {
+	path := fmt.Sprintf("$.tests[%d]", i)
+	switch {
+	case t.ID == "":
+		c.add(path, "id is required")
+	case strings.ContainsAny(t.ID, "#\n"):
+		c.add(path+".id", "id %q must not contain '#'", t.ID)
+	case seen[t.ID]:
+		c.add(path+".id", "duplicate test id %q", t.ID)
+	}
+	seen[t.ID] = true
+	if (t.Prompt == "") == (len(t.Turns) == 0) {
+		c.add(path, "exactly one of prompt or turns is required")
+	}
+	if t.Samples < 0 {
+		c.add(path+".samples", "samples must be non-negative")
+	}
+	if t.Agent != nil {
+		for j, tool := range t.Agent.Tools {
+			if _, ok := s.Tools[tool]; !ok {
+				c.add(fmt.Sprintf("%s.agent.tools[%d]", path, j), "unknown tool %q", tool)
+			}
+		}
+	}
+	if len(t.Assert) == 0 {
+		c.add(path, "at least one assertion is required")
+	}
+	judgeUsed := false
+	for j := range t.Assert {
+		if s.validateAssert(c, fmt.Sprintf("%s.assert[%d]", path, j), &t.Assert[j], t.Agent != nil) {
+			judgeUsed = true
+		}
+	}
+	return judgeUsed
+}
+
 func (s *Suite) validateTests(c *collector) bool {
 	if len(s.Tests) == 0 {
 		c.add("$.tests", "at least one test is required")
 	}
 	judgeUsed := false
 	seen := map[string]bool{}
-	for i, t := range s.Tests {
-		path := fmt.Sprintf("$.tests[%d]", i)
-		switch {
-		case t.ID == "":
-			c.add(path, "id is required")
-		case strings.ContainsAny(t.ID, "#\n"):
-			c.add(path+".id", "id %q must not contain '#'", t.ID)
-		case seen[t.ID]:
-			c.add(path+".id", "duplicate test id %q", t.ID)
-		}
-		seen[t.ID] = true
-		if (t.Prompt == "") == (len(t.Turns) == 0) {
-			c.add(path, "exactly one of prompt or turns is required")
-		}
-		if t.Samples < 0 {
-			c.add(path+".samples", "samples must be non-negative")
-		}
-		if t.Agent != nil {
-			for j, tool := range t.Agent.Tools {
-				if _, ok := s.Tools[tool]; !ok {
-					c.add(fmt.Sprintf("%s.agent.tools[%d]", path, j), "unknown tool %q", tool)
-				}
-			}
-		}
-		if len(t.Assert) == 0 {
-			c.add(path, "at least one assertion is required")
-		}
-		for j := range t.Assert {
-			if s.validateAssert(c, fmt.Sprintf("%s.assert[%d]", path, j), &t.Assert[j], t.Agent != nil) {
-				judgeUsed = true
-			}
+	for i := range s.Tests {
+		if s.validateTest(c, i, &s.Tests[i], seen) {
+			judgeUsed = true
 		}
 	}
 	return judgeUsed
 }
 
+func requiredFields(a *AssertSpec) (ok bool, field string) {
+	switch a.Kind {
+	case "equals", "contains":
+		return a.Value != nil, "value"
+	case "regex":
+		return a.Pattern != "" || a.Value != nil, "pattern"
+	case "json_schema":
+		return a.Schema != nil, "schema"
+	case "json_path":
+		return a.Path != "", "path"
+	case "cost_max":
+		return a.MaxUSD > 0, "max_usd"
+	case "latency_max":
+		return a.MaxMS > 0, "max_ms"
+	case "tool_called", "tool_not_called":
+		return a.Name != "", "name"
+	case "tool_order":
+		return len(a.Sequence) > 0, "sequence"
+	case kindMaxSteps, "max_tool_calls":
+		_, isInt := AsInt(a.Value)
+		return isInt, "an integer value"
+	case kindJudge:
+		return len(a.Rubric) > 0, "rubric"
+	}
+	return true, ""
+}
+
 func (s *Suite) validateAssert(c *collector, path string, a *AssertSpec, agent bool) bool {
 	if a.Not != nil {
-		if a.Kind != "" && a.Kind != "not" {
+		if a.Kind != "" && a.Kind != kindNot {
 			c.add(path, "not: cannot be combined with kind %q", a.Kind)
 		}
-		a.Kind = "not"
+		a.Kind = kindNot
 		return s.validateAssert(c, path+".not", a.Not, agent)
 	}
 	if !slices.Contains(assertKindList(), a.Kind) {
@@ -215,45 +269,22 @@ func (s *Suite) validateAssert(c *collector, path string, a *AssertSpec, agent b
 	if agentKind(a.Kind) && !agent {
 		c.add(path, "%s needs an agent: block on the test", a.Kind)
 	}
-	need := func(ok bool, field string) {
-		if !ok {
-			c.add(path, "%s requires %s", a.Kind, field)
+	if ok, field := requiredFields(a); !ok {
+		c.add(path, "%s requires %s", a.Kind, field)
+	}
+	if a.Kind != kindJudge {
+		return false
+	}
+	for i, r := range a.Rubric {
+		if r.ID == "" || r.Pass == "" {
+			c.add(fmt.Sprintf("%s.rubric[%d]", path, i), "criterion needs id and pass")
 		}
 	}
-	switch a.Kind {
-	case "equals", "contains":
-		need(a.Value != nil, "value")
-	case "regex":
-		need(a.Pattern != "" || a.Value != nil, "pattern")
-	case "json_schema":
-		need(a.Schema != nil, "schema")
-	case "json_path":
-		need(a.Path != "", "path")
-	case "cost_max":
-		need(a.MaxUSD > 0, "max_usd")
-	case "latency_max":
-		need(a.MaxMS > 0, "max_ms")
-	case "tool_called", "tool_not_called":
-		need(a.Name != "", "name")
-	case "tool_order":
-		need(len(a.Sequence) > 0, "sequence")
-	case "max_steps", "max_tool_calls":
-		_, ok := AsInt(a.Value)
-		need(ok, "an integer value")
-	case "judge":
-		need(len(a.Rubric) > 0, "rubric")
-		for i, r := range a.Rubric {
-			if r.ID == "" || r.Pass == "" {
-				c.add(fmt.Sprintf("%s.rubric[%d]", path, i), "criterion needs id and pass")
-			}
-		}
-		if a.Target != "" {
-			if _, ok := s.Targets[a.Target]; !ok {
-				c.add(path+".target", "unknown judge target %q", a.Target)
-			}
-			return false
-		}
+	if a.Target == "" {
 		return true
+	}
+	if _, ok := s.Targets[a.Target]; !ok {
+		c.add(path+".target", "unknown judge target %q", a.Target)
 	}
 	return false
 }
@@ -265,7 +296,7 @@ func (s *Suite) judgeTargets() map[string]bool {
 	}
 	for _, t := range s.Tests {
 		for _, a := range t.Assert {
-			if a.Kind == "judge" && a.Target != "" {
+			if a.Kind == kindJudge && a.Target != "" {
 				out[a.Target] = true
 			}
 		}

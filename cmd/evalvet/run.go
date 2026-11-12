@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -54,7 +55,7 @@ func newRunCmd(c *cli) *cobra.Command {
 		Short: "Run suites, compare against the baseline and gate on the result",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.run(cmd, args, f)
+			return c.run(cmd.Context(), args, f)
 		},
 	}
 	fl := cmd.Flags()
@@ -70,7 +71,12 @@ func newRunCmd(c *cli) *cobra.Command {
 	fl.StringVar(&f.pricingFile, "pricing", "", "pricing YAML layered over the built-in table")
 	fl.BoolVar(&f.strict, "strict-pricing", false, "fail when a target has no price")
 	fl.Uint64Var(&f.seed, "seed", 0, "seed for permutation and bootstrap (default: derived from the suite hash)")
-	fl.BoolVar(&f.ci, "ci", false, "CI mode: read-only cache, JUnit + Markdown + JSON in --out, step summary, annotations")
+	fl.BoolVar(
+		&f.ci,
+		"ci",
+		false,
+		"CI mode: read-only cache, JUnit + Markdown + JSON in --out, step summary, annotations",
+	)
 	fl.StringSliceVar(&f.formats, "format", nil, "stdout formats: table, json, md, junit (default table)")
 	fl.StringVar(&f.out, "out", "", "directory for results.json, report.md and junit.xml")
 	fl.BoolVar(&f.keepTraj, "keep-trajectories", false, "include agent trajectories in results.json")
@@ -80,7 +86,7 @@ func newRunCmd(c *cli) *cobra.Command {
 	fl.IntVar(&f.maxRetries, "max-retries", 4, "retries on 429/5xx, honouring retry-after")
 	fl.BoolVar(&f.progress, "progress", false, "force the live progress line")
 	for _, h := range []string{"http-record", "http-replay", "mock-latency"} {
-		_ = fl.MarkHidden(h)
+		fl.Lookup(h).Hidden = true
 	}
 	return cmd
 }
@@ -119,7 +125,7 @@ func isTerminal(w io.Writer) bool {
 	return err == nil && st.Mode()&os.ModeCharDevice != 0
 }
 
-func (c *cli) run(cmd *cobra.Command, args []string, f *runFlags) error {
+func (c *cli) run(ctx context.Context, args []string, f *runFlags) error {
 	opts, err := c.runOptions(f)
 	if err != nil {
 		return err
@@ -133,12 +139,12 @@ func (c *cli) run(cmd *cobra.Command, args []string, f *runFlags) error {
 	}
 	formats := f.formats
 	if len(formats) == 0 {
-		formats = []string{"table"}
+		formats = []string{formatTable}
 	}
 	worst := ExitOK
 	var firstErr error
 	for _, path := range args {
-		code, err := c.runSuite(cmd, a, path, f, formats, len(args) > 1)
+		code, err := c.runSuite(ctx, a, path, f, formats, len(args) > 1)
 		if code > worst || (code == ExitInterrupted) {
 			worst = code
 		}
@@ -155,8 +161,14 @@ func (c *cli) run(cmd *cobra.Command, args []string, f *runFlags) error {
 	return &ExitError{Code: worst, Err: firstErr}
 }
 
-func (c *cli) runSuite(cmd *cobra.Command, a *app.App, path string, f *runFlags, formats []string, multi bool) (int, error) {
-	ctx := cmd.Context()
+func (c *cli) runSuite(
+	ctx context.Context,
+	a *app.App,
+	path string,
+	f *runFlags,
+	formats []string,
+	multi bool,
+) (int, error) {
 	s, err := a.Load(path)
 	if err != nil {
 		return ExitUsage, err
@@ -196,9 +208,9 @@ func (c *cli) emit(res domain.RunResult, formats []string, out string, ci bool) 
 	for _, fm := range formats {
 		var err error
 		switch strings.TrimSpace(fm) {
-		case "table":
+		case formatTable:
 			err = table.Write(c.streams.Out, res)
-		case "json":
+		case formatJSON:
 			err = jsonr.Write(c.streams.Out, res)
 		case "md", "markdown":
 			err = markdown.Write(c.streams.Out, res)

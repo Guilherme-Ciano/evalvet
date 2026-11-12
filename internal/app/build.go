@@ -44,12 +44,26 @@ func defaultConcurrency(kind string) int {
 	return 8
 }
 
-func newRaw(name string, p config.Provider, apiKey string, client *http.Client, mockLatency time.Duration) domain.Provider {
+func newRaw(
+	name string,
+	p config.Provider,
+	apiKey string,
+	client *http.Client,
+	mockLatency time.Duration,
+) domain.Provider {
 	switch p.Kind {
 	case config.KindAnthropic:
 		return anthropic.New(anthropic.Config{Name: name, BaseURL: p.BaseURL, APIKey: apiKey, HTTPClient: client})
 	case config.KindOpenAI, config.KindOpenAICompatible:
-		return openai.New(openai.Config{Name: name, Compatible: p.Kind == config.KindOpenAICompatible, BaseURL: p.BaseURL, APIKey: apiKey, HTTPClient: client})
+		return openai.New(
+			openai.Config{
+				Name:       name,
+				Compatible: p.Kind == config.KindOpenAICompatible,
+				BaseURL:    p.BaseURL,
+				APIKey:     apiKey,
+				HTTPClient: client,
+			},
+		)
 	default:
 		return mock.New(name, mockLatency)
 	}
@@ -140,9 +154,20 @@ func (a *App) buildProviders(suite *config.Suite, budget *scheduler.Budget) (*pr
 		}
 		ps.keys[name] = gk
 		ps.concurrency[gk] = max(ps.concurrency[gk], conc)
-		client := transport.NewClient(transport.Options{RecordDir: a.opts.HTTPRecordDir, ReplayDir: a.opts.HTTPReplayDir})
+		client := transport.NewClient(
+			transport.Options{RecordDir: a.opts.HTTPRecordDir, ReplayDir: a.opts.HTTPReplayDir},
+		)
 		raw := newRaw(name, p, key, client, a.opts.MockLatency)
-		gated := scheduler.Wrap(raw, gate, scheduler.Options{Budget: budget, MaxRetries: a.opts.MaxRetries, Estimate: a.estimator(suite, name), Price: a.pricer(suite, name)})
+		gated := scheduler.Wrap(
+			raw,
+			gate,
+			scheduler.Options{
+				Budget:     budget,
+				MaxRetries: a.opts.MaxRetries,
+				Estimate:   a.estimator(suite, name),
+				Price:      a.pricer(suite, name),
+			},
+		)
 		endpoint := p.BaseURL
 		if p.Kind == config.KindMock {
 			endpoint = "in-process"

@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"os"
 	"path/filepath"
@@ -13,6 +15,8 @@ import (
 
 	"github.com/Guilherme-Ciano/evalvet/internal/tmpl"
 )
+
+var errDataset = errors.New("invalid dataset")
 
 func AsInt(v any) (int, bool) {
 	switch x := v.(type) {
@@ -46,30 +50,36 @@ type record struct {
 	expected any
 }
 
+func (s *Suite) testRecords(t *Test) ([]record, error) {
+	if t.Each == "" {
+		return []record{{id: t.ID}}, nil
+	}
+	recs, err := s.loadRecords(t.Each)
+	if err != nil {
+		return nil, err
+	}
+	if len(recs) == 0 {
+		return nil, fmt.Errorf("pattern %q matched no records: %w", t.Each, errDataset)
+	}
+	for j := range recs {
+		if recs[j].id == "" {
+			recs[j].id = fmt.Sprintf("%03d", j+1)
+		}
+		recs[j].id = t.ID + "#" + recs[j].id
+	}
+	return recs, nil
+}
+
 func (s *Suite) expandCases(c *collector) {
 	for i := range s.Tests {
 		t := &s.Tests[i]
 		path := fmt.Sprintf("$.tests[%d]", i)
-		line := s.Line(path)
-		records := []record{{id: t.ID}}
-		if t.Each != "" {
-			recs, err := s.loadRecords(t.Each)
-			if err != nil {
-				c.add(path+".each", "%v", err)
-				continue
-			}
-			if len(recs) == 0 {
-				c.add(path+".each", "pattern %q matched no records", t.Each)
-				continue
-			}
-			records = recs
-			for j := range records {
-				if records[j].id == "" {
-					records[j].id = fmt.Sprintf("%03d", j+1)
-				}
-				records[j].id = t.ID + "#" + records[j].id
-			}
+		records, err := s.testRecords(t)
+		if err != nil {
+			c.add(path+".each", "%v", err)
+			continue
 		}
+		line := s.Line(path)
 		for _, r := range records {
 			cs, err := s.buildCase(i, line, t, r)
 			if err != nil {
@@ -80,22 +90,18 @@ func (s *Suite) expandCases(c *collector) {
 		}
 	}
 	seen := map[string]bool{}
-	for _, cs := range s.Cases {
-		if seen[cs.ID] {
-			c.add(fmt.Sprintf("$.tests[%d]", cs.TestIdx), "duplicate case id %q", cs.ID)
+	for i := range s.Cases {
+		if seen[s.Cases[i].ID] {
+			c.add(fmt.Sprintf("$.tests[%d]", s.Cases[i].TestIdx), "duplicate case id %q", s.Cases[i].ID)
 		}
-		seen[cs.ID] = true
+		seen[s.Cases[i].ID] = true
 	}
 }
 
 func (s *Suite) buildCase(idx, line int, t *Test, r record) (Case, error) {
 	data := map[string]any{}
-	for k, v := range t.Vars {
-		data[k] = v
-	}
-	for k, v := range r.vars {
-		data[k] = v
-	}
+	maps.Copy(data, t.Vars)
+	maps.Copy(data, r.vars)
 	data["expected"] = r.expected
 	data["case_id"] = r.id
 	cs := Case{ID: r.id, TestIdx: idx, Line: line, Agent: t.Agent, Data: data}
@@ -149,7 +155,7 @@ func renderAssert(id string, a AssertSpec, data map[string]any) (AssertSpec, err
 		return a, err
 	}
 	if a.Args != nil {
-		v, err := tmpl.RenderValue(name, map[string]any(a.Args), data)
+		v, err := tmpl.RenderValue(name, a.Args, data)
 		if err != nil {
 			return a, err
 		}
@@ -195,6 +201,46 @@ func (s *Suite) loadRecords(pattern string) ([]record, error) {
 	return out, nil
 }
 
+func decodeJSONL(path string, b []byte) ([]map[string]any, error) {
+	var raws []map[string]any
+	sc := bufio.NewScanner(bytes.NewReader(b))
+	sc.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
+	for n := 1; sc.Scan(); n++ {
+		line := bytes.TrimSpace(sc.Bytes())
+		if len(line) == 0 {
+			continue
+		}
+		var m map[string]any
+		if err := json.Unmarshal(line, &m); err != nil {
+			return nil, fmt.Errorf("%s:%d: %w", path, n, err)
+		}
+		raws = append(raws, m)
+	}
+	if err := sc.Err(); err != nil {
+		return nil, fmt.Errorf("scan %s: %w", path, err)
+	}
+	return raws, nil
+}
+
+func decodeJSONFile(path string, b []byte) ([]map[string]any, error) {
+	trimmed := bytes.TrimSpace(b)
+	if len(trimmed) > 0 && trimmed[0] == '[' {
+		var raws []map[string]any
+		if err := json.Unmarshal(trimmed, &raws); err != nil {
+			return nil, fmt.Errorf("decode %s: %w", path, err)
+		}
+		return raws, nil
+	}
+	var m map[string]any
+	if err := json.Unmarshal(trimmed, &m); err != nil {
+		return nil, fmt.Errorf("decode %s: %w", path, err)
+	}
+	if m["id"] == nil {
+		m["id"] = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	}
+	return []map[string]any{m}, nil
+}
+
 func readRecordFile(path string) ([]record, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -203,40 +249,14 @@ func readRecordFile(path string) ([]record, error) {
 	var raws []map[string]any
 	switch strings.ToLower(filepath.Ext(path)) {
 	case ".jsonl":
-		sc := bufio.NewScanner(bytes.NewReader(b))
-		sc.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
-		for n := 1; sc.Scan(); n++ {
-			line := bytes.TrimSpace(sc.Bytes())
-			if len(line) == 0 {
-				continue
-			}
-			var m map[string]any
-			if err := json.Unmarshal(line, &m); err != nil {
-				return nil, fmt.Errorf("%s:%d: %w", path, n, err)
-			}
-			raws = append(raws, m)
-		}
-		if err := sc.Err(); err != nil {
-			return nil, fmt.Errorf("scan %s: %w", path, err)
-		}
+		raws, err = decodeJSONL(path, b)
 	case ".json":
-		trimmed := bytes.TrimSpace(b)
-		if len(trimmed) > 0 && trimmed[0] == '[' {
-			if err := json.Unmarshal(trimmed, &raws); err != nil {
-				return nil, fmt.Errorf("decode %s: %w", path, err)
-			}
-		} else {
-			var m map[string]any
-			if err := json.Unmarshal(trimmed, &m); err != nil {
-				return nil, fmt.Errorf("decode %s: %w", path, err)
-			}
-			raws = append(raws, m)
-			if len(raws) == 1 && raws[0]["id"] == nil {
-				raws[0]["id"] = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-			}
-		}
+		raws, err = decodeJSONFile(path, b)
 	default:
-		return nil, fmt.Errorf("dataset %s: unsupported extension (want .json or .jsonl)", path)
+		err = fmt.Errorf("dataset %s: unsupported extension (want .json or .jsonl): %w", path, errDataset)
+	}
+	if err != nil {
+		return nil, err
 	}
 	out := make([]record, 0, len(raws))
 	for _, m := range raws {

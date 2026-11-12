@@ -42,7 +42,7 @@ func (c *cli) logger() *slog.Logger {
 		lvl = slog.LevelDebug
 	}
 	opts := &slog.HandlerOptions{Level: lvl}
-	if c.logFormat == "json" {
+	if c.logFormat == formatJSON {
 		return slog.New(slog.NewJSONHandler(c.streams.Err, opts))
 	}
 	return slog.New(slog.NewTextHandler(c.streams.Err, opts))
@@ -87,6 +87,6 @@ func Execute(ctx context.Context, args []string, streams Streams, env config.Loo
 }
 
 func isConfigError(err error) bool {
-	_, ok := config.AsValidation(err)
-	return ok
+	var v *config.ValidationError
+	return errors.As(err, &v)
 }

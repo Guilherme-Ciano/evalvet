@@ -7,7 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"path"
+	pathpkg "path"
 	"slices"
 	"strings"
 	"time"
@@ -97,8 +97,8 @@ func New(o Options) (*App, error) {
 
 func (a *App) Pricing() pricing.Table { return a.pricing }
 
-func (a *App) Load(path string) (*config.Suite, error) {
-	s, err := config.Load(path, a.opts.Env)
+func (a *App) Load(file string) (*config.Suite, error) {
+	s, err := config.Load(file, a.opts.Env)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,10 @@ func (a *App) check(s *config.Suite) error {
 	for _, name := range s.Matrix.Targets {
 		if _, ok := a.priceEntry(s, name); !ok {
 			if a.opts.StrictPricing || a.opts.BudgetUSD > 0 {
-				add("$.targets"+config.Key(name), fmt.Errorf("no pricing for model %q; add it with --pricing", s.Targets[name].Model))
+				add(
+					"$.targets"+config.Key(name),
+					fmt.Errorf("no pricing for model %q; add it with --pricing", s.Targets[name].Model),
+				)
 			}
 		}
 	}
@@ -147,7 +150,14 @@ func (a *App) Warnings(s *config.Suite) []string {
 	var out []string
 	for _, name := range s.Matrix.Targets {
 		if _, ok := a.priceEntry(s, name); !ok {
-			out = append(out, fmt.Sprintf("no pricing for target %s (model %s): cost is reported as n/a", name, s.Targets[name].Model))
+			out = append(
+				out,
+				fmt.Sprintf(
+					"no pricing for target %s (model %s): cost is reported as n/a",
+					name,
+					s.Targets[name].Model,
+				),
+			)
 		}
 	}
 	if j := s.Defaults.Judge.Target; j != "" {
@@ -157,7 +167,15 @@ func (a *App) Warnings(s *config.Suite) []string {
 		}
 		for _, name := range s.Matrix.Targets {
 			if modelFamily(s.Targets[name].Model) == jf && name != j {
-				out = append(out, fmt.Sprintf("judge %s shares the model family %q with target %s (self-preference bias)", j, jf, name))
+				out = append(
+					out,
+					fmt.Sprintf(
+						"judge %s shares the model family %q with target %s (self-preference bias)",
+						j,
+						jf,
+						name,
+					),
+				)
 			}
 		}
 	}
@@ -176,17 +194,70 @@ func (a *App) selectTargets(s *config.Suite) ([]string, error) {
 	return a.opts.Targets, nil
 }
 
-func (a *App) matches(c config.Case, s *config.Suite) bool {
+func (a *App) matches(c *config.Case, s *config.Suite) bool {
 	if a.opts.Filter == "" {
 		return true
 	}
 	id := s.Tests[c.TestIdx].ID
 	for _, cand := range []string{c.ID, id} {
-		if ok, err := path.Match(a.opts.Filter, cand); err == nil && ok {
+		if ok, err := pathpkg.Match(a.opts.Filter, cand); err == nil && ok {
 			return true
 		}
 	}
 	return false
+}
+
+func (a *App) buildCase(c *config.Case, reg *agent.Registry, deps assert.Deps) (runner.Case, error) {
+	rc := runner.Case{ID: c.ID, Line: c.Line, System: c.System, Messages: c.Messages, Samples: c.Samples}
+	if a.opts.Samples > 0 {
+		rc.Samples = a.opts.Samples
+	}
+	if c.Agent != nil {
+		defs, err := reg.Defs(c.Agent.Tools)
+		if err != nil {
+			return rc, err
+		}
+		rc.Tools = defs
+		rc.Agent = &agent.Limits{MaxSteps: c.Agent.MaxSteps, MaxToolCalls: c.Agent.MaxToolCalls}
+	}
+	for _, spec := range c.Asserts {
+		as, err := assert.Compile(spec, deps)
+		if err != nil {
+			return rc, fmt.Errorf("case %s: %w", c.ID, err)
+		}
+		rc.Asserts = append(rc.Asserts, as)
+	}
+	return rc, nil
+}
+
+func (a *App) buildPlan(s *config.Suite, targets []string, ps *providerSet) (runner.Plan, error) {
+	reg, err := agent.NewRegistry(s.Tools)
+	if err != nil {
+		return runner.Plan{}, fmt.Errorf("%w: %w", domain.ErrConfig, err)
+	}
+	deps := assert.Deps{JudgeSamples: s.Defaults.Judge.Samples, Judge: a.buildJudge(s, ps)}
+	plan := runner.Plan{Tools: reg, Concurrency: ps.concurrency, Timeout: s.Defaults.Timeout, KeepTraj: a.opts.KeepTraj}
+	for _, name := range targets {
+		t := s.Targets[name]
+		plan.Targets = append(plan.Targets, runner.Target{
+			Name: name, Provider: ps.providers[t.Provider], ProviderKey: ps.keys[t.Provider],
+			Model: t.Model, Params: toParams(t), Cost: a.costFunc(s, name),
+		})
+	}
+	for i := range s.Cases {
+		if !a.matches(&s.Cases[i], s) {
+			continue
+		}
+		rc, err := a.buildCase(&s.Cases[i], reg, deps)
+		if err != nil {
+			return plan, err
+		}
+		plan.Cases = append(plan.Cases, rc)
+	}
+	if len(plan.Cases) == 0 {
+		return plan, fmt.Errorf("filter %q matched no cases: %w", a.opts.Filter, domain.ErrConfig)
+	}
+	return plan, nil
 }
 
 func (a *App) Run(ctx context.Context, s *config.Suite) (domain.RunResult, error) {
@@ -200,46 +271,9 @@ func (a *App) Run(ctx context.Context, s *config.Suite) (domain.RunResult, error
 	if err != nil {
 		return domain.RunResult{}, err
 	}
-	reg, err := agent.NewRegistry(s.Tools)
+	plan, err := a.buildPlan(s, targets, ps)
 	if err != nil {
-		return domain.RunResult{}, fmt.Errorf("%w: %w", domain.ErrConfig, err)
-	}
-	deps := assert.Deps{JudgeSamples: s.Defaults.Judge.Samples, Judge: a.buildJudge(s, ps)}
-	plan := runner.Plan{Tools: reg, Concurrency: ps.concurrency, Timeout: s.Defaults.Timeout, KeepTraj: a.opts.KeepTraj}
-	for _, name := range targets {
-		t := s.Targets[name]
-		plan.Targets = append(plan.Targets, runner.Target{
-			Name: name, Provider: ps.providers[t.Provider], ProviderKey: ps.keys[t.Provider],
-			Model: t.Model, Params: toParams(t), Cost: a.costFunc(s, name),
-		})
-	}
-	for _, c := range s.Cases {
-		if !a.matches(c, s) {
-			continue
-		}
-		rc := runner.Case{ID: c.ID, Line: c.Line, System: c.System, Messages: c.Messages, Samples: c.Samples}
-		if a.opts.Samples > 0 {
-			rc.Samples = a.opts.Samples
-		}
-		if c.Agent != nil {
-			defs, err := reg.Defs(c.Agent.Tools)
-			if err != nil {
-				return domain.RunResult{}, err
-			}
-			rc.Tools = defs
-			rc.Agent = &agent.Limits{MaxSteps: c.Agent.MaxSteps, MaxToolCalls: c.Agent.MaxToolCalls}
-		}
-		for _, spec := range c.Asserts {
-			as, err := assert.Compile(spec, deps)
-			if err != nil {
-				return domain.RunResult{}, fmt.Errorf("case %s: %w", c.ID, err)
-			}
-			rc.Asserts = append(rc.Asserts, as)
-		}
-		plan.Cases = append(plan.Cases, rc)
-	}
-	if len(plan.Cases) == 0 {
-		return domain.RunResult{}, fmt.Errorf("filter %q matched no cases: %w", a.opts.Filter, domain.ErrConfig)
+		return domain.RunResult{}, err
 	}
 	progress := newProgress(a.opts.Progress, len(plan.Targets), plan.Cases)
 	plan.OnTrial = progress.add
@@ -250,10 +284,7 @@ func (a *App) Run(ctx context.Context, s *config.Suite) (domain.RunResult, error
 	a.opts.Logger.InfoContext(ctx, "run finished",
 		slog.Int("trials", len(trials)), slog.Int64("cache_hits", cs.Hits), slog.Int64("cache_misses", cs.Misses),
 		slog.Float64("budget_spent_usd", budget.Spent()))
-	if runErr != nil {
-		return res, runErr
-	}
-	return res, nil
+	return res, runErr
 }
 
 func (a *App) buildJudge(s *config.Suite, ps *providerSet) assert.Judge {
@@ -380,10 +411,24 @@ func Gates(s *config.Suite, res domain.RunResult) []domain.GateFailure {
 	var out []domain.GateFailure
 	for _, t := range res.Targets {
 		if f := s.Gates.MinPassRate; f != nil && t.PassRate < *f {
-			out = append(out, domain.GateFailure{Gate: "min_pass_rate", Target: t.Target, Message: fmt.Sprintf("pass rate %.3f < %.3f", t.PassRate, *f)})
+			out = append(
+				out,
+				domain.GateFailure{
+					Gate:    "min_pass_rate",
+					Target:  t.Target,
+					Message: fmt.Sprintf("pass rate %.3f < %.3f", t.PassRate, *f),
+				},
+			)
 		}
 		if f := s.Gates.MaxErrorRate; f != nil && t.ErrorRate() > *f {
-			out = append(out, domain.GateFailure{Gate: "max_error_rate", Target: t.Target, Message: fmt.Sprintf("error rate %.3f > %.3f", t.ErrorRate(), *f)})
+			out = append(
+				out,
+				domain.GateFailure{
+					Gate:    "max_error_rate",
+					Target:  t.Target,
+					Message: fmt.Sprintf("error rate %.3f > %.3f", t.ErrorRate(), *f),
+				},
+			)
 		}
 	}
 	if lim := s.Gates.Cost.MaxIncreasePct; lim != nil {
@@ -392,7 +437,14 @@ func Gates(s *config.Suite, res domain.RunResult) []domain.GateFailure {
 				continue
 			}
 			if pct := (*c.HeadCost - *c.BaseCost) / *c.BaseCost * 100; pct > *lim {
-				out = append(out, domain.GateFailure{Gate: "cost", Target: c.Head, Message: fmt.Sprintf("cost +%.0f%% > +%.0f%%", pct, *lim)})
+				out = append(
+					out,
+					domain.GateFailure{
+						Gate:    "cost",
+						Target:  c.Head,
+						Message: fmt.Sprintf("cost +%.0f%% > +%.0f%%", pct, *lim),
+					},
+				)
 			}
 		}
 	}

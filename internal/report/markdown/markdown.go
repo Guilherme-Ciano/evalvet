@@ -37,63 +37,114 @@ func escape(s string) string {
 	return strings.ReplaceAll(s, "\n", " ")
 }
 
-func Write(w io.Writer, r domain.RunResult) error {
-	var b strings.Builder
-	icon, label := overall(r)
-	fmt.Fprintf(&b, "%s\n### evalvet · %s · %s %s\n\n", Marker(r.Suite), r.Suite, icon, label)
-	if len(r.Comparisons) > 0 {
-		b.WriteString("| comparison | pass rate (base → head) | Δ (95% CI) | p | cost | p95 latency | TTFT p50 | verdict |\n")
-		b.WriteString("|---|---|---|---|---|---|---|---|\n")
-		for _, c := range r.Comparisons {
-			fmt.Fprintf(&b, "| %s → %s | %s → %s | %s [%s, %s] | %s | %s → %s | %s → %s | %s | %s %s |\n",
-				c.Base, c.Head, format.Rate(c.BasePassRate), format.Rate(c.HeadPassRate),
-				format.Signed(c.Delta), format.Signed(c.CILow), format.Signed(c.CIHigh), format.P(c.P),
-				format.Cost(c.BaseCost), format.Cost(c.HeadCost), format.Dur(c.BaseP95), format.Dur(c.HeadP95),
-				format.Dur(c.HeadTTFTP50), format.VerdictIcon(c.Verdict), c.Verdict)
-		}
-		b.WriteString("\n")
+func writeComparisons(b *strings.Builder, r *domain.RunResult) {
+	if len(r.Comparisons) == 0 {
+		return
 	}
+	b.WriteString(
+		"| comparison | pass rate (base → head) | Δ (95% CI) | p | cost | p95 latency | TTFT p50 | verdict |\n",
+	)
+	b.WriteString("|---|---|---|---|---|---|---|---|\n")
+	for i := range r.Comparisons {
+		c := &r.Comparisons[i]
+		fmt.Fprintf(b, "| %s → %s | %s → %s | %s [%s, %s] | %s | %s → %s | %s → %s | %s | %s %s |\n",
+			c.Base, c.Head, format.Rate(c.BasePassRate), format.Rate(c.HeadPassRate),
+			format.Signed(c.Delta), format.Signed(c.CILow), format.Signed(c.CIHigh), format.P(c.P),
+			format.Cost(c.BaseCost), format.Cost(c.HeadCost), format.Dur(c.BaseP95), format.Dur(c.HeadP95),
+			format.Dur(c.HeadTTFTP50), format.VerdictIcon(c.Verdict), c.Verdict)
+	}
+	b.WriteString("\n")
+}
+
+func writeTargets(b *strings.Builder, r *domain.RunResult) {
 	b.WriteString("| target | model | pass rate | cases | trials | errors | cost |\n|---|---|---|---|---|---|---|\n")
-	for _, t := range r.Targets {
-		fmt.Fprintf(&b, "| %s | %s | %s | %d | %d | %d | %s |\n", t.Target, t.Model, format.Rate(t.PassRate), len(t.Cases), t.Trials, t.Errors, format.Cost(t.CostUSD))
-	}
-	cost := "n/a"
-	if r.TotalCost != nil {
-		cost = format.Cost(r.TotalCost)
+	for i := range r.Targets {
+		t := &r.Targets[i]
+		fmt.Fprintf(
+			b,
+			"| %s | %s | %s | %d | %d | %d | %s |\n",
+			t.Target,
+			t.Model,
+			format.Rate(t.PassRate),
+			len(t.Cases),
+			t.Trials,
+			t.Errors,
+			format.Cost(t.CostUSD),
+		)
 	}
 	hitPct := 0
 	if r.TotalTrials > 0 {
 		hitPct = r.CacheHits * 100 / r.TotalTrials
 	}
-	fmt.Fprintf(&b, "\n%d trials, %d%% cache hits, live spend %s.\n", r.TotalTrials, hitPct, cost)
-	for _, c := range r.Comparisons {
+	fmt.Fprintf(b, "\n%d trials, %d%% cache hits, live spend %s.\n", r.TotalTrials, hitPct, format.Cost(r.TotalCost))
+}
+
+func writeReasons(b *strings.Builder, r *domain.RunResult) {
+	for i := range r.Comparisons {
+		c := &r.Comparisons[i]
 		if len(c.Reasons) > 0 {
-			fmt.Fprintf(&b, "\n**%s → %s:** %s\n", c.Base, c.Head, escape(strings.Join(c.Reasons, "; ")))
+			fmt.Fprintf(b, "\n**%s → %s:** %s\n", c.Base, c.Head, escape(strings.Join(c.Reasons, "; ")))
 		}
 	}
 	for _, g := range r.Gates {
-		fmt.Fprintf(&b, "\n**Gate `%s` failed** for `%s`: %s\n", g.Gate, g.Target, escape(g.Message))
+		fmt.Fprintf(b, "\n**Gate `%s` failed** for `%s`: %s\n", g.Gate, g.Target, escape(g.Message))
 	}
-	for _, c := range r.Comparisons {
-		var rows []domain.CaseDiff
-		for _, cd := range c.Cases {
-			if cd.HeadPasses*cd.BaseN < cd.BasePasses*cd.HeadN && len(rows) < 15 {
-				rows = append(rows, cd)
-			}
+}
+
+func writeCases(b *strings.Builder, c *domain.Comparison) {
+	var rows []domain.CaseDiff
+	for _, cd := range c.Cases {
+		if cd.HeadPasses*cd.BaseN < cd.BasePasses*cd.HeadN && len(rows) < 15 {
+			rows = append(rows, cd)
 		}
-		if len(rows) == 0 {
-			continue
-		}
-		fmt.Fprintf(&b, "\n<details><summary>%s → %s: cases driving the change (Holm-adjusted)</summary>\n\n", c.Base, c.Head)
-		b.WriteString("| case | base | head | p_adj | first failing assertion |\n|---|---|---|---|---|\n")
-		for _, cd := range rows {
-			fmt.Fprintf(&b, "| %s | %d/%d | %d/%d | %s | %s |\n", escape(cd.CaseID), cd.BasePasses, cd.BaseN, cd.HeadPasses, cd.HeadN, format.P(cd.PAdjusted), escape(cd.FirstFailure))
-		}
-		b.WriteString("</details>\n")
+	}
+	if len(rows) == 0 {
+		return
+	}
+	fmt.Fprintf(
+		b,
+		"\n<details><summary>%s → %s: cases driving the change (Holm-adjusted)</summary>\n\n",
+		c.Base,
+		c.Head,
+	)
+	b.WriteString("| case | base | head | p_adj | first failing assertion |\n|---|---|---|---|---|\n")
+	for _, cd := range rows {
+		fmt.Fprintf(
+			b,
+			"| %s | %d/%d | %d/%d | %s | %s |\n",
+			escape(cd.CaseID),
+			cd.BasePasses,
+			cd.BaseN,
+			cd.HeadPasses,
+			cd.HeadN,
+			format.P(cd.PAdjusted),
+			escape(cd.FirstFailure),
+		)
+	}
+	b.WriteString("</details>\n")
+}
+
+func Write(w io.Writer, r domain.RunResult) error {
+	var b strings.Builder
+	icon, label := overall(r)
+	fmt.Fprintf(&b, "%s\n### evalvet · %s · %s %s\n\n", Marker(r.Suite), r.Suite, icon, label)
+	writeComparisons(&b, &r)
+	writeTargets(&b, &r)
+	writeReasons(&b, &r)
+	for i := range r.Comparisons {
+		writeCases(&b, &r.Comparisons[i])
 	}
 	m := r.Method
-	fmt.Fprintf(&b, "\n<details><summary>Method</summary>Paired sign-flip permutation test on per-case pass rates (%d rounds, exact when N ≤ 20, seed %d), case-clustered bootstrap 95%% CI (%d resamples), α=%.2f, δ=%.2f, per-case one-sided Fisher with Holm correction, pricing %s.</details>\n",
-		m.Permutations, m.Seed, m.Bootstrap, m.Alpha, m.MinEffect, m.PricingVersion)
+	fmt.Fprintf(
+		&b,
+		"\n<details><summary>Method</summary>Paired sign-flip permutation test on per-case pass rates (%d rounds, exact when N ≤ 20, seed %d), case-clustered bootstrap 95%% CI (%d resamples), α=%.2f, δ=%.2f, per-case one-sided Fisher with Holm correction, pricing %s.</details>\n",
+		m.Permutations,
+		m.Seed,
+		m.Bootstrap,
+		m.Alpha,
+		m.MinEffect,
+		m.PricingVersion,
+	)
 	if _, err := io.WriteString(w, b.String()); err != nil {
 		return fmt.Errorf("write markdown: %w", err)
 	}

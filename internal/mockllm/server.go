@@ -76,8 +76,11 @@ func (s *Server) wait(r *http.Request) bool {
 func badRequest(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
-	b, _ := json.Marshal(map[string]any{"error": map[string]string{"type": "invalid_request_error", "message": err.Error()}})
-	_, _ = w.Write(b)
+	msg, mErr := json.Marshal(err.Error())
+	if mErr != nil {
+		msg = []byte(`"bad request"`)
+	}
+	_, _ = fmt.Fprintf(w, `{"error":{"type":"invalid_request_error","message":%s}}`, msg)
 }
 
 type sse struct {
@@ -192,7 +195,10 @@ func (r oaiRequest) toDomain() domain.Request {
 			msg := domain.Message{Role: domain.RoleAssistant, Content: textOf(m.Content)}
 			for _, c := range m.ToolCalls {
 				names[c.ID] = c.Function.Name
-				msg.ToolCalls = append(msg.ToolCalls, domain.ToolCall{ID: c.ID, Name: c.Function.Name, Arguments: json.RawMessage(c.Function.Arguments)})
+				msg.ToolCalls = append(
+					msg.ToolCalls,
+					domain.ToolCall{ID: c.ID, Name: c.Function.Name, Arguments: json.RawMessage(c.Function.Arguments)},
+				)
 			}
 			req.Messages = append(req.Messages, msg)
 		case "tool":
@@ -202,14 +208,24 @@ func (r oaiRequest) toDomain() domain.Request {
 			if n > 0 && req.Messages[n-1].Role == domain.RoleTool {
 				req.Messages[n-1].ToolResults = append(req.Messages[n-1].ToolResults, res)
 			} else {
-				req.Messages = append(req.Messages, domain.Message{Role: domain.RoleTool, ToolResults: []domain.ToolResult{res}})
+				req.Messages = append(
+					req.Messages,
+					domain.Message{Role: domain.RoleTool, ToolResults: []domain.ToolResult{res}},
+				)
 			}
 		default:
 			req.Messages = append(req.Messages, domain.Message{Role: domain.RoleUser, Content: textOf(m.Content)})
 		}
 	}
 	for _, t := range r.Tools {
-		req.Tools = append(req.Tools, domain.ToolDef{Name: t.Function.Name, Description: t.Function.Description, Parameters: t.Function.Parameters})
+		req.Tools = append(
+			req.Tools,
+			domain.ToolDef{
+				Name:        t.Function.Name,
+				Description: t.Function.Description,
+				Parameters:  t.Function.Parameters,
+			},
+		)
 	}
 	return req
 }
@@ -257,9 +273,14 @@ func (s *Server) openAI(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"id": id, "object": "chat.completion", "created": created, "model": in.Model,
-			"choices": []any{map[string]any{"index": 0, "message": msg, "finish_reason": finishReason(resp.StopReason)}},
-			"usage":   usage,
+			"id":      id,
+			"object":  "chat.completion",
+			"created": created,
+			"model":   in.Model,
+			"choices": []any{
+				map[string]any{"index": 0, "message": msg, "finish_reason": finishReason(resp.StopReason)},
+			},
+			"usage": usage,
 		})
 		return
 	}
@@ -282,7 +303,17 @@ func (s *Server) openAI(w http.ResponseWriter, r *http.Request) {
 		out.send("", chunk(map[string]any{"tool_calls": toolCalls}, nil))
 	}
 	out.send("", chunk(map[string]any{}, finishReason(resp.StopReason)))
-	out.send("", map[string]any{"id": id, "object": "chat.completion.chunk", "created": created, "model": in.Model, "choices": []any{}, "usage": usage})
+	out.send(
+		"",
+		map[string]any{
+			"id":      id,
+			"object":  "chat.completion.chunk",
+			"created": created,
+			"model":   in.Model,
+			"choices": []any{},
+			"usage":   usage,
+		},
+	)
 	out.raw("data: [DONE]\n\n")
 }
 
@@ -333,7 +364,15 @@ func (r antRequest) toDomain() domain.Request {
 				names[b.ID] = b.Name
 				msg.ToolCalls = append(msg.ToolCalls, domain.ToolCall{ID: b.ID, Name: b.Name, Arguments: b.Input})
 			case "tool_result":
-				results = append(results, domain.ToolResult{CallID: b.ToolUseID, Name: names[b.ToolUseID], Content: textOf(b.Content), IsError: b.IsError})
+				results = append(
+					results,
+					domain.ToolResult{
+						CallID:  b.ToolUseID,
+						Name:    names[b.ToolUseID],
+						Content: textOf(b.Content),
+						IsError: b.IsError,
+					},
+				)
 			}
 		}
 		if len(results) > 0 {
@@ -345,7 +384,10 @@ func (r antRequest) toDomain() domain.Request {
 		req.Messages = append(req.Messages, msg)
 	}
 	for _, t := range r.Tools {
-		req.Tools = append(req.Tools, domain.ToolDef{Name: t.Name, Description: t.Description, Parameters: t.InputSchema})
+		req.Tools = append(
+			req.Tools,
+			domain.ToolDef{Name: t.Name, Description: t.Description, Parameters: t.InputSchema},
+		)
 	}
 	return req
 }
@@ -380,7 +422,10 @@ func (s *Server) anthropic(w http.ResponseWriter, r *http.Request) {
 		content = append(content, map[string]any{"type": "text", "text": resp.Text})
 	}
 	for _, c := range resp.ToolCalls {
-		content = append(content, map[string]any{"type": "tool_use", "id": c.ID, "name": c.Name, "input": json.RawMessage(c.Arguments)})
+		content = append(
+			content,
+			map[string]any{"type": "tool_use", "id": c.ID, "name": c.Name, "input": c.Arguments},
+		)
 	}
 	var details any
 	if resp.StopReason == domain.StopRefusal {
@@ -404,16 +449,49 @@ func (s *Server) anthropic(w http.ResponseWriter, r *http.Request) {
 	out.send("ping", map[string]any{"type": "ping"})
 	idx := 0
 	if resp.Text != "" {
-		out.send("content_block_start", map[string]any{"type": "content_block_start", "index": idx, "content_block": map[string]any{"type": "text", "text": ""}})
+		out.send(
+			"content_block_start",
+			map[string]any{
+				"type":          "content_block_start",
+				"index":         idx,
+				"content_block": map[string]any{"type": "text", "text": ""},
+			},
+		)
 		for _, part := range chunks(resp.Text, 3) {
-			out.send("content_block_delta", map[string]any{"type": "content_block_delta", "index": idx, "delta": map[string]any{"type": "text_delta", "text": part}})
+			out.send(
+				"content_block_delta",
+				map[string]any{
+					"type":  "content_block_delta",
+					"index": idx,
+					"delta": map[string]any{"type": "text_delta", "text": part},
+				},
+			)
 		}
 		out.send("content_block_stop", map[string]any{"type": "content_block_stop", "index": idx})
 		idx++
 	}
 	for _, c := range resp.ToolCalls {
-		out.send("content_block_start", map[string]any{"type": "content_block_start", "index": idx, "content_block": map[string]any{"type": "tool_use", "id": c.ID, "name": c.Name, "input": map[string]any{}}})
-		out.send("content_block_delta", map[string]any{"type": "content_block_delta", "index": idx, "delta": map[string]any{"type": "input_json_delta", "partial_json": string(c.Arguments)}})
+		out.send(
+			"content_block_start",
+			map[string]any{
+				"type":  "content_block_start",
+				"index": idx,
+				"content_block": map[string]any{
+					"type":  "tool_use",
+					"id":    c.ID,
+					"name":  c.Name,
+					"input": map[string]any{},
+				},
+			},
+		)
+		out.send(
+			"content_block_delta",
+			map[string]any{
+				"type":  "content_block_delta",
+				"index": idx,
+				"delta": map[string]any{"type": "input_json_delta", "partial_json": string(c.Arguments)},
+			},
+		)
 		out.send("content_block_stop", map[string]any{"type": "content_block_stop", "index": idx})
 		idx++
 	}
@@ -421,6 +499,13 @@ func (s *Server) anthropic(w http.ResponseWriter, r *http.Request) {
 	if details != nil {
 		delta["stop_details"] = details
 	}
-	out.send("message_delta", map[string]any{"type": "message_delta", "delta": delta, "usage": map[string]any{"output_tokens": resp.Usage.OutputTokens}})
+	out.send(
+		"message_delta",
+		map[string]any{
+			"type":  "message_delta",
+			"delta": delta,
+			"usage": map[string]any{"output_tokens": resp.Usage.OutputTokens},
+		},
+	)
 	out.send("message_stop", map[string]any{"type": "message_stop"})
 }

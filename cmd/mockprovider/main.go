@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -20,7 +19,7 @@ import (
 func healthcheck(url string) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return 1
 	}
@@ -28,8 +27,7 @@ func healthcheck(url string) int {
 	if err != nil {
 		return 1
 	}
-	_, _ = io.Copy(io.Discard, resp.Body)
-	_ = resp.Body.Close()
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return 1
 	}
@@ -47,8 +45,9 @@ func run(ctx context.Context, args []string, log *slog.Logger) error {
 		return fmt.Errorf("flags: %w", err)
 	}
 	srv := &http.Server{
-		Addr:              *addr,
-		Handler:           mockllm.NewServer(mockllm.ServerOptions{Latency: *latency, Jitter: *jitter, ChunkDelay: *chunkDelay, RateLimitEvery: *every}).Handler(),
+		Addr: *addr,
+		Handler: mockllm.NewServer(mockllm.ServerOptions{Latency: *latency, Jitter: *jitter, ChunkDelay: *chunkDelay, RateLimitEvery: *every}).
+			Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		BaseContext:       func(_ net.Listener) context.Context { return ctx },

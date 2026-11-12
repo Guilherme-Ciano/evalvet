@@ -234,7 +234,7 @@ func SampleSizePerArm(p1, p2, alpha, power float64) int {
 	return int(math.Ceil(num * num / (diff * diff)))
 }
 
-func MinimumDetectableEffect(cases int, k float64, baseRate, alpha, power float64) float64 {
+func MinimumDetectableEffect(cases int, k, baseRate, alpha, power float64) float64 {
 	if cases <= 0 || k <= 0 {
 		return 1
 	}

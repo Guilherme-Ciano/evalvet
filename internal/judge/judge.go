@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Guilherme-Ciano/evalvet/internal/assert"
@@ -115,7 +116,7 @@ func (j *Judge) Judge(ctx context.Context, req assert.JudgeRequest) (domain.Judg
 			Messages: []domain.Message{{Role: domain.RoleUser, Content: userPrompt(req)}},
 			Params:   t.Params,
 			Sample:   i,
-			TrialID:  "judge:" + req.CaseID + "@" + fmt.Sprint(i),
+			TrialID:  "judge:" + req.CaseID + "@" + strconv.Itoa(i),
 		}
 		resp, err := j.call(ctx, t.Provider, r)
 		if err != nil {

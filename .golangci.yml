@@ -71,13 +71,18 @@ linters:
     errcheck:
       check-type-assertions: true
       check-blank: true
+    exhaustive:
+      default-signifies-exhaustive: true
     gocognit:
       min-complexity: 20
     gocritic:
       enabled-tags: [diagnostic, performance, style]
-      disabled-checks: [commentFormatting, commentedOutCode, docStub, hugeParam, whyNoLint]
+      disabled-checks: [commentFormatting, commentedOutCode, docStub, hugeParam, rangeValCopy, unnamedResult, whyNoLint]
     gosec:
-      excludes: [G104]
+      excludes: [G104, G304]
+    goconst:
+      min-occurrences: 4
+      ignore-string-values: ["^json$", "^table$"]
     nakedret:
       max-func-lines: 0
     nolintlint:
@@ -133,6 +138,24 @@ linters:
       - path: cmd/
         linters: [gochecknoglobals]
         text: "version|commit|date"
+      - path: cmd/evalvet/root\.go
+        linters: [contextcheck]
+      - path: internal/mockllm/server\.go
+        linters: [goconst]
+      - path: internal/mockllm/server\.go
+        linters: [errcheck]
+        text: "io.WriteString|w.Write|Encode|Error return value is not checked"
+      - path: internal/mockllm/server\.go
+        linters: [errchkjson]
+      - path: cmd/evalvet/init\.go
+        linters: [gosec]
+        text: G703
+      - path: (internal/stats/|internal/scheduler/|internal/mockllm/)
+        linters: [gosec]
+        text: G404
+      - path: (bench/|cmd/mockprovider/)
+        linters: [gosec]
+        text: "G204|G704"
 
 formatters:
   enable: [gofumpt, gci, golines]

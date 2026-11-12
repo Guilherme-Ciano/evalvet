@@ -29,7 +29,10 @@ func newBaselineCmd(c *cli) *cobra.Command {
 			if path == "" {
 				path = ".evalvet/baselines/" + results[0].Suite + ".json"
 			}
-			if err := baseline.Save(path, baseline.FromRun(results[0], c.getenv("GITHUB_SHA"), time.Now())); err != nil {
+			if err := baseline.Save(
+				path,
+				baseline.FromRun(results[0], c.getenv("GITHUB_SHA"), time.Now()),
+			); err != nil {
 				return err
 			}
 			fmt.Fprintf(c.streams.Out, "baseline for %s written to %s\n", results[0].Suite, path)
@@ -52,7 +55,17 @@ func newBaselineCmd(c *cli) *cobra.Command {
 			tw := tabwriter.NewWriter(c.streams.Out, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(tw, "TARGET\tMODEL\tPASS RATE\tCASES\tTRIALS\tCOST\tP95")
 			for _, t := range b.Targets {
-				fmt.Fprintf(tw, "%s\t%s\t%s\t%d\t%d\t%s\t%s\n", t.Target, t.Model, format.Rate(t.PassRate), len(t.Cases), t.Trials, format.Cost(t.CostUSD), format.Dur(t.LatencyP95))
+				fmt.Fprintf(
+					tw,
+					"%s\t%s\t%s\t%d\t%d\t%s\t%s\n",
+					t.Target,
+					t.Model,
+					format.Rate(t.PassRate),
+					len(t.Cases),
+					t.Trials,
+					format.Cost(t.CostUSD),
+					format.Dur(t.LatencyP95),
+				)
 			}
 			if err := tw.Flush(); err != nil {
 				return fmt.Errorf("print baseline: %w", err)

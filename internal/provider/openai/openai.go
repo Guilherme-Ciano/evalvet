@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -67,7 +68,7 @@ func (p *Provider) params(req domain.Request) oai.ChatCompletionNewParams {
 		msgs = append(msgs, convertMessage(m)...)
 	}
 	params := oai.ChatCompletionNewParams{
-		Model:         shared.ChatModel(req.Model),
+		Model:         req.Model,
 		Messages:      msgs,
 		StreamOptions: oai.ChatCompletionStreamOptionsParam{IncludeUsage: oai.Bool(true)},
 	}
@@ -138,98 +139,115 @@ type toolAcc struct {
 	args     strings.Builder
 }
 
+type streamState struct {
+	start   time.Time
+	text    strings.Builder
+	refusal strings.Builder
+	tools   map[int64]*toolAcc
+	finish  string
+	usage   domain.Usage
+	first   time.Duration
+	model   string
+}
+
+func (s *streamState) usageFrom(u oai.CompletionUsage) {
+	cached := u.PromptTokensDetails.CachedTokens
+	s.usage = domain.Usage{
+		InputTokens:       u.PromptTokens - cached,
+		CachedInputTokens: cached,
+		CacheWriteTokens:  u.PromptTokensDetails.CacheWriteTokens,
+		OutputTokens:      u.CompletionTokens,
+		ReasoningTokens:   u.CompletionTokensDetails.ReasoningTokens,
+		Known:             true,
+	}
+}
+
+func (s *streamState) add(chunk *oai.ChatCompletionChunk) {
+	if chunk.Model != "" {
+		s.model = chunk.Model
+	}
+	if chunk.JSON.Usage.Valid() && chunk.Usage.TotalTokens > 0 {
+		s.usageFrom(chunk.Usage)
+	}
+	if len(chunk.Choices) == 0 {
+		return
+	}
+	choice := &chunk.Choices[0]
+	d := &choice.Delta
+	if s.first == 0 && (d.Content != "" || len(d.ToolCalls) > 0 || d.Refusal != "") {
+		s.first = time.Since(s.start)
+	}
+	s.text.WriteString(d.Content)
+	s.refusal.WriteString(d.Refusal)
+	for i := range d.ToolCalls {
+		tc := &d.ToolCalls[i]
+		acc, ok := s.tools[tc.Index]
+		if !ok {
+			acc = &toolAcc{}
+			s.tools[tc.Index] = acc
+		}
+		if tc.ID != "" {
+			acc.id = tc.ID
+		}
+		if tc.Function.Name != "" {
+			acc.name = tc.Function.Name
+		}
+		acc.args.WriteString(tc.Function.Arguments)
+	}
+	if choice.FinishReason != "" {
+		s.finish = choice.FinishReason
+	}
+}
+
+func (s *streamState) response(ttfb time.Duration) domain.Response {
+	refused := s.refusal.Len() > 0
+	resp := domain.Response{
+		Text:       s.text.String(),
+		StopReason: stopReason(s.finish, refused),
+		Usage:      s.usage,
+		Model:      s.model,
+	}
+	if refused && resp.Text == "" {
+		resp.Text = s.refusal.String()
+	}
+	idx := slices.Sorted(maps.Keys(s.tools))
+	for _, i := range idx {
+		acc := s.tools[i]
+		args := acc.args.String()
+		if args == "" {
+			args = "{}"
+		}
+		resp.ToolCalls = append(
+			resp.ToolCalls,
+			domain.ToolCall{ID: acc.id, Name: acc.name, Arguments: json.RawMessage(args)},
+		)
+	}
+	total := time.Since(s.start)
+	first := s.first
+	if first == 0 {
+		first = total
+	}
+	resp.Timing = domain.Timing{Start: s.start, TTFB: ttfb, FirstToken: first, Total: total}
+	return resp
+}
+
 func (p *Provider) Complete(ctx context.Context, req domain.Request) (domain.Response, error) {
 	ctx, rec := transport.WithRecorder(ctx)
-	start := time.Now()
-	opts := []option.RequestOption{}
+	st := &streamState{start: time.Now(), tools: map[int64]*toolAcc{}}
+	var opts []option.RequestOption
 	if req.TrialID != "" {
 		opts = append(opts, option.WithHeader(mockllm.TrialHeader, req.TrialID))
 	}
 	stream := p.client.Chat.Completions.NewStreaming(ctx, p.params(req), opts...)
 	defer stream.Close()
-	var (
-		text    strings.Builder
-		refusal strings.Builder
-		tools   = map[int64]*toolAcc{}
-		finish  string
-		usage   domain.Usage
-		first   time.Duration
-		model   string
-	)
 	for stream.Next() {
 		chunk := stream.Current()
-		if chunk.Model != "" {
-			model = chunk.Model
-		}
-		if chunk.JSON.Usage.Valid() && chunk.Usage.TotalTokens > 0 {
-			usage = domain.Usage{
-				InputTokens:       chunk.Usage.PromptTokens - chunk.Usage.PromptTokensDetails.CachedTokens,
-				CachedInputTokens: chunk.Usage.PromptTokensDetails.CachedTokens,
-				CacheWriteTokens:  chunk.Usage.PromptTokensDetails.CacheWriteTokens,
-				OutputTokens:      chunk.Usage.CompletionTokens,
-				ReasoningTokens:   chunk.Usage.CompletionTokensDetails.ReasoningTokens,
-				Known:             true,
-			}
-		}
-		if len(chunk.Choices) == 0 {
-			continue
-		}
-		choice := chunk.Choices[0]
-		d := choice.Delta
-		if first == 0 && (d.Content != "" || len(d.ToolCalls) > 0 || d.Refusal != "") {
-			first = time.Since(start)
-		}
-		text.WriteString(d.Content)
-		refusal.WriteString(d.Refusal)
-		for _, tc := range d.ToolCalls {
-			acc, ok := tools[tc.Index]
-			if !ok {
-				acc = &toolAcc{}
-				tools[tc.Index] = acc
-			}
-			if tc.ID != "" {
-				acc.id = tc.ID
-			}
-			if tc.Function.Name != "" {
-				acc.name = tc.Function.Name
-			}
-			acc.args.WriteString(tc.Function.Arguments)
-		}
-		if choice.FinishReason != "" {
-			finish = choice.FinishReason
-		}
+		st.add(&chunk)
 	}
 	if err := stream.Err(); err != nil {
 		return domain.Response{}, p.mapError(err)
 	}
-	resp := domain.Response{
-		Text:       text.String(),
-		StopReason: stopReason(finish, refusal.Len() > 0),
-		Usage:      usage,
-		Model:      model,
-	}
-	if refusal.Len() > 0 && resp.Text == "" {
-		resp.Text = refusal.String()
-	}
-	idx := make([]int64, 0, len(tools))
-	for i := range tools {
-		idx = append(idx, i)
-	}
-	sort.Slice(idx, func(a, b int) bool { return idx[a] < idx[b] })
-	for _, i := range idx {
-		acc := tools[i]
-		args := acc.args.String()
-		if args == "" {
-			args = "{}"
-		}
-		resp.ToolCalls = append(resp.ToolCalls, domain.ToolCall{ID: acc.id, Name: acc.name, Arguments: json.RawMessage(args)})
-	}
-	total := time.Since(start)
-	if first == 0 {
-		first = total
-	}
-	resp.Timing = domain.Timing{Start: start, TTFB: rec.TTFB(), FirstToken: first, Total: total}
-	return resp, nil
+	return st.response(rec.TTFB()), nil
 }
 
 func stopReason(finish string, refused bool) domain.StopReason {
@@ -251,8 +269,7 @@ func stopReason(finish string, refused bool) domain.StopReason {
 }
 
 func (p *Provider) mapError(err error) error {
-	var apiErr *oai.Error
-	if errors.As(err, &apiErr) {
+	if apiErr, ok := errors.AsType[*oai.Error](err); ok {
 		var h http.Header
 		if apiErr.Response != nil {
 			h = apiErr.Response.Header

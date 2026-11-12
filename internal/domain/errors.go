@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -30,5 +31,5 @@ func (e *ProviderError) Is(target error) bool {
 	if target == ErrProvider {
 		return true
 	}
-	return target == ErrAuth && (e.StatusCode == 401 || e.StatusCode == 403)
+	return target == ErrAuth && (e.StatusCode == http.StatusUnauthorized || e.StatusCode == http.StatusForbidden)
 }

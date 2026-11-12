@@ -50,11 +50,34 @@ func (p *Provider) Capabilities() domain.Capabilities {
 	return domain.Capabilities{Tools: true, Streaming: true}
 }
 
-func (p *Provider) params(req domain.Request) ant.MessageNewParams {
-	params := ant.MessageNewParams{
-		Model:     req.Model,
-		MaxTokens: req.Params.MaxTokens,
+func toolSchema(raw json.RawMessage) ant.ToolInputSchemaParam {
+	schema := ant.ToolInputSchemaParam{}
+	var m map[string]any
+	if len(raw) == 0 || json.Unmarshal(raw, &m) != nil {
+		return schema
 	}
+	schema.Properties = m["properties"]
+	if req, ok := m["required"].([]any); ok {
+		for _, r := range req {
+			if s, ok := r.(string); ok {
+				schema.Required = append(schema.Required, s)
+			}
+		}
+	}
+	extra := map[string]any{}
+	for k, v := range m {
+		if k != "properties" && k != "required" && k != "type" {
+			extra[k] = v
+		}
+	}
+	if len(extra) > 0 {
+		schema.ExtraFields = extra
+	}
+	return schema
+}
+
+func (p *Provider) params(req domain.Request) ant.MessageNewParams {
+	params := ant.MessageNewParams{Model: req.Model, MaxTokens: req.Params.MaxTokens}
 	if params.MaxTokens <= 0 {
 		params.MaxTokens = 1024
 	}
@@ -68,28 +91,7 @@ func (p *Provider) params(req domain.Request) ant.MessageNewParams {
 		params.Messages = append(params.Messages, convertMessage(m))
 	}
 	for _, t := range req.Tools {
-		schema := ant.ToolInputSchemaParam{}
-		var raw map[string]any
-		if len(t.Parameters) > 0 && json.Unmarshal(t.Parameters, &raw) == nil {
-			schema.Properties = raw["properties"]
-			if req, ok := raw["required"].([]any); ok {
-				for _, r := range req {
-					if s, ok := r.(string); ok {
-						schema.Required = append(schema.Required, s)
-					}
-				}
-			}
-			extra := map[string]any{}
-			for k, v := range raw {
-				if k != "properties" && k != "required" && k != "type" {
-					extra[k] = v
-				}
-			}
-			if len(extra) > 0 {
-				schema.ExtraFields = extra
-			}
-		}
-		tool := ant.ToolUnionParamOfTool(schema, t.Name)
+		tool := ant.ToolUnionParamOfTool(toolSchema(t.Parameters), t.Name)
 		if t.Description != "" {
 			tool.OfTool.Description = ant.String(t.Description)
 		}
@@ -108,7 +110,7 @@ func convertMessage(m domain.Message) ant.MessageParam {
 		for _, c := range m.ToolCalls {
 			var input any = map[string]any{}
 			if len(c.Arguments) > 0 {
-				input = json.RawMessage(c.Arguments)
+				input = c.Arguments
 			}
 			blocks = append(blocks, ant.NewToolUseBlock(c.ID, input, c.Name))
 		}
@@ -201,8 +203,7 @@ func stopReason(r ant.StopReason) domain.StopReason {
 }
 
 func (p *Provider) mapError(err error) error {
-	var apiErr *ant.Error
-	if errors.As(err, &apiErr) {
+	if apiErr, ok := errors.AsType[*ant.Error](err); ok {
 		var h http.Header
 		if apiErr.Response != nil {
 			h = apiErr.Response.Header

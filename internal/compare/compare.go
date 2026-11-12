@@ -54,14 +54,14 @@ func Compare(name string, base, head domain.TargetStats, o Options) domain.Compa
 		baseByID[cs.CaseID] = cs
 	}
 	var (
-		d         []float64
-		bRates    []float64
-		hRates    []float64
-		kSum      float64
-		allKOne   = true
-		diffs     []domain.CaseDiff
-		dropped   int
-		pvals     []float64
+		d       []float64
+		bRates  []float64
+		hRates  []float64
+		kSum    float64
+		allKOne = true
+		diffs   []domain.CaseDiff
+		dropped int
+		pvals   []float64
 	)
 	for _, h := range head.Cases {
 		b, ok := baseByID[h.CaseID]
@@ -86,7 +86,10 @@ func Compare(name string, base, head domain.TargetStats, o Options) domain.Compa
 	}
 	c.N = len(d)
 	if dropped > 0 {
-		c.Reasons = append(c.Reasons, fmt.Sprintf("%d case(s) without valid trials in both arms were excluded", dropped))
+		c.Reasons = append(
+			c.Reasons,
+			fmt.Sprintf("%d case(s) without valid trials in both arms were excluded", dropped),
+		)
 	}
 	if c.N == 0 {
 		c.Verdict = domain.VerdictInconclusive
@@ -118,7 +121,13 @@ func Compare(name string, base, head domain.TargetStats, o Options) domain.Compa
 	c.Cases = diffs
 	c.Verdict, c.Reasons = decide(c, o, c.Reasons)
 	if c.Verdict != domain.VerdictPass && c.Verdict != domain.VerdictNonInferior && !anySignificant(diffs, o.Alpha) {
-		c.Reasons = append(c.Reasons, fmt.Sprintf("no single case is significant after Holm correction at k≈%.0f; per-case calls need more samples", c.MeanK))
+		c.Reasons = append(
+			c.Reasons,
+			fmt.Sprintf(
+				"no single case is significant after Holm correction at k≈%.0f; per-case calls need more samples",
+				c.MeanK,
+			),
+		)
 	}
 	return c
 }
@@ -146,17 +155,35 @@ func signed(v float64) string {
 func decide(c domain.Comparison, o Options, reasons []string) (domain.Verdict, []string) {
 	if o.Mode == ModeNonInferiority {
 		if c.CILow > -o.Margin {
-			return domain.VerdictNonInferior, append(reasons, fmt.Sprintf("CI lower bound %s > −%.2f margin", signed(c.CILow), o.Margin))
+			return domain.VerdictNonInferior, append(
+				reasons,
+				fmt.Sprintf("CI lower bound %s > −%.2f margin", signed(c.CILow), o.Margin),
+			)
 		}
-		return domain.VerdictNotNonInferior, append(reasons, fmt.Sprintf("CI lower bound %s ≤ −%.2f margin", signed(c.CILow), o.Margin))
+		return domain.VerdictNotNonInferior, append(
+			reasons,
+			fmt.Sprintf("CI lower bound %s ≤ −%.2f margin", signed(c.CILow), o.Margin),
+		)
 	}
 	switch {
 	case c.P < o.Alpha && c.Delta < -o.MinEffect:
-		return domain.VerdictRegression, append(reasons, fmt.Sprintf("p=%.4f < α=%.2f and Δ %s beyond −%.2f", c.P, o.Alpha, signed(c.Delta), o.MinEffect))
+		return domain.VerdictRegression, append(
+			reasons,
+			fmt.Sprintf("p=%.4f < α=%.2f and Δ %s beyond −%.2f", c.P, o.Alpha, signed(c.Delta), o.MinEffect),
+		)
 	case c.PImprove < o.Alpha && c.Delta > o.MinEffect:
-		return domain.VerdictImprovement, append(reasons, fmt.Sprintf("p=%.4f < α=%.2f and Δ %s beyond +%.2f", c.PImprove, o.Alpha, signed(c.Delta), o.MinEffect))
+		return domain.VerdictImprovement, append(
+			reasons,
+			fmt.Sprintf("p=%.4f < α=%.2f and Δ %s beyond +%.2f", c.PImprove, o.Alpha, signed(c.Delta), o.MinEffect),
+		)
 	case c.CILow < -o.MinEffect:
-		r := fmt.Sprintf("CI [%s, %s] straddles −%.2f; this suite can only detect drops ≥ %.0f pts", signed(c.CILow), signed(c.CIHigh), o.MinEffect, math.Ceil(c.MDE*100))
+		r := fmt.Sprintf(
+			"CI [%s, %s] straddles −%.2f; this suite can only detect drops ≥ %.0f pts",
+			signed(c.CILow),
+			signed(c.CIHigh),
+			o.MinEffect,
+			math.Ceil(c.MDE*100),
+		)
 		return domain.VerdictInconclusive, append(reasons, r)
 	default:
 		return domain.VerdictPass, reasons
