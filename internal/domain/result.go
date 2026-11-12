@@ -151,8 +151,11 @@ type Comparison struct {
 	Reasons      []string      `json:"reasons,omitempty"`
 	BaseCost     *float64      `json:"base_cost_usd,omitempty"`
 	HeadCost     *float64      `json:"head_cost_usd,omitempty"`
+	BaseP50      time.Duration `json:"base_latency_p50_ns"`
+	HeadP50      time.Duration `json:"head_latency_p50_ns"`
 	BaseP95      time.Duration `json:"base_latency_p95_ns"`
 	HeadP95      time.Duration `json:"head_latency_p95_ns"`
+	BaseTTFTP50  time.Duration `json:"base_ttft_p50_ns"`
 	HeadTTFTP50  time.Duration `json:"head_ttft_p50_ns"`
 	Cases        []CaseDiff    `json:"cases,omitempty"`
 }
@@ -210,4 +213,13 @@ func (r RunResult) Target(name string) (TargetStats, bool) {
 		}
 	}
 	return TargetStats{}, false
+}
+
+type JudgeVerdict struct {
+	Pass        bool
+	Score       float64
+	Reason      string
+	Usage       Usage
+	CostUSD     *float64
+	Consistency float64
 }

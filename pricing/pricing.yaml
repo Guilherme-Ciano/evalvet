@@ -1,0 +1,30 @@
+version: 2026-11-01
+currency: USD
+models:
+  - provider: anthropic
+    model: claude-haiku-5-5
+    effective_from: 2026-10-01
+    per_mtok: { input: 0.10, output: 0.50 }
+    tiers:
+      - above_input_tokens: 100000
+        per_mtok: { input: 0.50, output: 2.50 }
+  - provider: anthropic
+    model: claude-sonnet-5-5
+    effective_from: 2026-10-01
+    per_mtok: { input: 2.00, output: 10.00, cached_input: 0.20 }
+  - provider: anthropic
+    model: claude-opus-5-5
+    effective_from: 2026-10-01
+    per_mtok: { input: 4.00, output: 20.00, cached_input: 0.20 }
+  - provider: openai
+    model: gpt-5-mini
+    effective_from: 2025-08-07
+    per_mtok: { input: 0.25, cached_input: 0.025, output: 2.00 }
+  - provider: ollama
+    model: "*"
+    effective_from: 2020-01-01
+    per_mtok: { input: 0, output: 0 }
+  - provider: mock
+    model: "*"
+    effective_from: 2020-01-01
+    per_mtok: { input: 1.00, output: 5.00 }
