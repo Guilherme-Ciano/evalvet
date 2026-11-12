@@ -352,8 +352,11 @@ func (a *App) assemble(s *config.Suite, plan runner.Plan, trials []domain.Trial,
 	for _, t := range plan.Targets {
 		res.Targets = append(res.Targets, runner.Aggregate(t, plan.Cases, trials))
 	}
-	res.Comparisons = a.Comparisons(s, res)
-	res.Gates = Gates(s, res)
+	var baseGates []domain.GateFailure
+	var baseWarnings []string
+	res.Comparisons, baseGates, baseWarnings = a.Comparisons(s, res)
+	res.Warnings = append(res.Warnings, baseWarnings...)
+	res.Gates = append(baseGates, Gates(s, res)...)
 	res.Duration = a.opts.Clock().Sub(started)
 	return res
 }
@@ -368,7 +371,11 @@ func (a *App) baselinePath(s *config.Suite) string {
 	return s.Gates.Baseline
 }
 
-func (a *App) Comparisons(s *config.Suite, res domain.RunResult) []domain.Comparison {
+func (a *App) Comparisons(s *config.Suite, res domain.RunResult) ([]domain.Comparison, []domain.GateFailure, []string) {
+	var (
+		gates    []domain.GateFailure
+		warnings []string
+	)
 	var out []domain.Comparison
 	opts := compare.Options{
 		Alpha: s.Gates.Alpha, MinEffect: s.Gates.MinEffect, Seed: res.Method.Seed,
@@ -380,8 +387,9 @@ func (a *App) Comparisons(s *config.Suite, res domain.RunResult) []domain.Compar
 		case err == nil:
 			out = append(out, CompareBaseline(b, res, opts)...)
 		case errors.Is(err, baseline.ErrNotFound):
+			warnings = append(warnings, "baseline "+p+" not found: nothing to compare against (save one with --save-baseline)")
 		default:
-			a.opts.Logger.Warn("baseline unreadable", slog.String("path", p), slog.String("error", err.Error()))
+			gates = append(gates, domain.GateFailure{Gate: GateBaseline, Target: "*", Message: err.Error()})
 		}
 	}
 	for _, spec := range s.Compare {
@@ -394,7 +402,7 @@ func (a *App) Comparisons(s *config.Suite, res domain.RunResult) []domain.Compar
 		o.Mode, o.Margin = spec.Mode, spec.Margin
 		out = append(out, compare.Compare(spec.Base+"→"+spec.Head, base, head, o))
 	}
-	return out
+	return out, gates, warnings
 }
 
 func CompareBaseline(b baseline.Baseline, res domain.RunResult, opts compare.Options) []domain.Comparison {
@@ -454,6 +462,13 @@ func Gates(s *config.Suite, res domain.RunResult) []domain.GateFailure {
 	return out
 }
 
+const (
+	GateBaseline     = "baseline"
+	GateMaxErrorRate = "max_error_rate"
+)
+
 func InfraFailure(res domain.RunResult) bool {
-	return slices.ContainsFunc(res.Gates, func(g domain.GateFailure) bool { return g.Gate == "max_error_rate" })
+	return slices.ContainsFunc(res.Gates, func(g domain.GateFailure) bool {
+		return g.Gate == GateMaxErrorRate || g.Gate == GateBaseline
+	})
 }

@@ -83,6 +83,11 @@ func Save(path string, b Baseline) error {
 	if err != nil {
 		return fmt.Errorf("baseline temp: %w", err)
 	}
+	if err := tmp.Chmod(0o644); err != nil {
+		_ = tmp.Close()
+		_ = os.Remove(tmp.Name())
+		return fmt.Errorf("baseline chmod: %w", err)
+	}
 	_, wErr := tmp.Write(append(out, '\n'))
 	cErr := tmp.Close()
 	if err := errors.Join(wErr, cErr); err != nil {
