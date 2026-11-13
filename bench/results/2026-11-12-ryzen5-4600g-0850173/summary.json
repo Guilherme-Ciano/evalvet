@@ -1,0 +1,880 @@
+{
+  "schema": 1,
+  "date": "2026-11-12",
+  "git_short_sha": "0850173",
+  "git_dirty": true,
+  "throughput": {
+    "cases": 10000,
+    "samples": 1,
+    "runs": 7,
+    "trials_per_sec_run_only": {
+      "n": 7,
+      "min": 91229.02779213875,
+      "median": 99831.04095473615,
+      "mean": 102967.15599777145,
+      "p90": 112210.96726156189,
+      "p99": 119838.36606097149,
+      "max": 120685.85481646145
+    },
+    "trials_per_sec_load_plus_run": {
+      "n": 7,
+      "min": 28916.076812435113,
+      "median": 30658.670509318144,
+      "mean": 30393.36701991881,
+      "p90": 31841.428685045314,
+      "p99": 31967.758221462365,
+      "max": 31981.794836619814
+    },
+    "run_sec": {
+      "n": 7,
+      "min": 0.082859752,
+      "median": 0.100169245,
+      "mean": 0.09773937757142857,
+      "p90": 0.1044932286,
+      "p99": 0.10910213346,
+      "max": 0.109614234
+    },
+    "load_sec": {
+      "n": 7,
+      "min": 0.21883496,
+      "median": 0.232122195,
+      "mean": 0.2317800932857143,
+      "p90": 0.2408966974,
+      "p99": 0.24442261984,
+      "max": 0.244814389
+    },
+    "cli_wall_sec": {
+      "n": 7,
+      "min": 0.369401111,
+      "median": 0.390608094,
+      "mean": 0.392893122,
+      "p90": 0.4126757986,
+      "p99": 0.42862532985999996,
+      "max": 0.4303975
+    },
+    "pass_rate": 0.9471,
+    "target_trials_per_sec": 20000,
+    "target_met": true,
+    "children": [
+      {
+        "scenario": "throughput",
+        "trials": 10000,
+        "passes": 9471,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.236214146,
+        "run_sec": 0.109614234,
+        "vmhwm_start_kb": 37460,
+        "vmhwm_after_load_kb": 93088,
+        "vmhwm_after_run_kb": 153320,
+        "vmhwm_kb": 153388,
+        "vmrss_end_kb": 153388,
+        "heap_sys_bytes": 120946688,
+        "total_alloc_bytes": 287821128,
+        "num_gc": 16,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "throughput",
+        "trials": 10000,
+        "passes": 9471,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.225885917,
+        "run_sec": 0.100286087,
+        "vmhwm_start_kb": 37072,
+        "vmhwm_after_load_kb": 94924,
+        "vmhwm_after_run_kb": 153092,
+        "vmhwm_kb": 153112,
+        "vmrss_end_kb": 153112,
+        "heap_sys_bytes": 116752384,
+        "total_alloc_bytes": 287767784,
+        "num_gc": 16,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "throughput",
+        "trials": 10000,
+        "passes": 9471,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.226304143,
+        "run_sec": 0.096324174,
+        "vmhwm_start_kb": 37140,
+        "vmhwm_after_load_kb": 95008,
+        "vmhwm_after_run_kb": 148948,
+        "vmhwm_kb": 149012,
+        "vmrss_end_kb": 149012,
+        "heap_sys_bytes": 116752384,
+        "total_alloc_bytes": 287821720,
+        "num_gc": 16,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "throughput",
+        "trials": 10000,
+        "passes": 9471,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.238284903,
+        "run_sec": 0.101079225,
+        "vmhwm_start_kb": 37472,
+        "vmhwm_after_load_kb": 95420,
+        "vmhwm_after_run_kb": 153548,
+        "vmhwm_kb": 153572,
+        "vmrss_end_kb": 153572,
+        "heap_sys_bytes": 116719616,
+        "total_alloc_bytes": 287696952,
+        "num_gc": 16,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "throughput",
+        "trials": 10000,
+        "passes": 9471,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.244814389,
+        "run_sec": 0.100169245,
+        "vmhwm_start_kb": 37272,
+        "vmhwm_after_load_kb": 94744,
+        "vmhwm_after_run_kb": 152928,
+        "vmhwm_kb": 152948,
+        "vmrss_end_kb": 152948,
+        "heap_sys_bytes": 120946688,
+        "total_alloc_bytes": 287706856,
+        "num_gc": 15,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "throughput",
+        "trials": 10000,
+        "passes": 9471,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.232122195,
+        "run_sec": 0.082859752,
+        "vmhwm_start_kb": 37076,
+        "vmhwm_after_load_kb": 90816,
+        "vmhwm_after_run_kb": 150976,
+        "vmhwm_kb": 151048,
+        "vmrss_end_kb": 151048,
+        "heap_sys_bytes": 116719616,
+        "total_alloc_bytes": 287820952,
+        "num_gc": 16,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "throughput",
+        "trials": 10000,
+        "passes": 9471,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.21883496,
+        "run_sec": 0.093842926,
+        "vmhwm_start_kb": 37152,
+        "vmhwm_after_load_kb": 93256,
+        "vmhwm_after_run_kb": 149232,
+        "vmhwm_kb": 149308,
+        "vmrss_end_kb": 149308,
+        "heap_sys_bytes": 112558080,
+        "total_alloc_bytes": 287799776,
+        "num_gc": 16,
+        "gomaxprocs": 12
+      }
+    ]
+  },
+  "cache_rerun": {
+    "cases": 1000,
+    "samples": 1,
+    "fill_run_sec": 0.185117128,
+    "fill_trials": 1000,
+    "cache_files": 1000,
+    "rerun_in_process_load_plus_run_sec": {
+      "n": 7,
+      "min": 0.069297234,
+      "median": 0.070696014,
+      "mean": 0.07769631714285714,
+      "p90": 0.09106587140000001,
+      "p99": 0.10195201273999999,
+      "max": 0.103161584
+    },
+    "rerun_in_process_run_only_sec": {
+      "n": 7,
+      "min": 0.045167954,
+      "median": 0.046702081,
+      "mean": 0.052705932428571425,
+      "p90": 0.0649225638,
+      "p99": 0.07529057837999999,
+      "max": 0.07644258
+    },
+    "rerun_cli_wall_sec": {
+      "n": 7,
+      "min": 0.086048705,
+      "median": 0.111366586,
+      "mean": 0.10913192528571429,
+      "p90": 0.1173422502,
+      "p99": 0.11992611132,
+      "max": 0.120213207
+    },
+    "cache_hits_per_rerun": 1000,
+    "trials_per_rerun": 1000,
+    "target_sec": 1,
+    "target_met": true,
+    "children": [
+      {
+        "scenario": "cache-rerun",
+        "trials": 1000,
+        "passes": 948,
+        "errors": 0,
+        "cache_hits": 1000,
+        "load_sec": 0.024468315,
+        "run_sec": 0.046121487,
+        "vmhwm_start_kb": 37356,
+        "vmhwm_after_load_kb": 44416,
+        "vmhwm_after_run_kb": 70236,
+        "vmhwm_kb": 70236,
+        "vmrss_end_kb": 65868,
+        "heap_sys_bytes": 33226752,
+        "total_alloc_bytes": 88337096,
+        "num_gc": 15,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "cache-rerun",
+        "trials": 1000,
+        "passes": 948,
+        "errors": 0,
+        "cache_hits": 1000,
+        "load_sec": 0.025492463,
+        "run_sec": 0.051457693,
+        "vmhwm_start_kb": 37880,
+        "vmhwm_after_load_kb": 46984,
+        "vmhwm_after_run_kb": 78896,
+        "vmhwm_kb": 78896,
+        "vmrss_end_kb": 68668,
+        "heap_sys_bytes": 40894464,
+        "total_alloc_bytes": 88545912,
+        "num_gc": 15,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "cache-rerun",
+        "trials": 1000,
+        "passes": 948,
+        "errors": 0,
+        "cache_hits": 1000,
+        "load_sec": 0.026719004,
+        "run_sec": 0.07644258,
+        "vmhwm_start_kb": 37220,
+        "vmhwm_after_load_kb": 46392,
+        "vmhwm_after_run_kb": 82516,
+        "vmhwm_kb": 82516,
+        "vmrss_end_kb": 70392,
+        "heap_sys_bytes": 45088768,
+        "total_alloc_bytes": 87964104,
+        "num_gc": 14,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "cache-rerun",
+        "trials": 1000,
+        "passes": 948,
+        "errors": 0,
+        "cache_hits": 1000,
+        "load_sec": 0.02412928,
+        "run_sec": 0.045167954,
+        "vmhwm_start_kb": 36880,
+        "vmhwm_after_load_kb": 45804,
+        "vmhwm_after_run_kb": 78308,
+        "vmhwm_kb": 78308,
+        "vmrss_end_kb": 70312,
+        "heap_sys_bytes": 39485440,
+        "total_alloc_bytes": 88380144,
+        "num_gc": 14,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "cache-rerun",
+        "trials": 1000,
+        "passes": 948,
+        "errors": 0,
+        "cache_hits": 1000,
+        "load_sec": 0.023993933,
+        "run_sec": 0.046702081,
+        "vmhwm_start_kb": 39008,
+        "vmhwm_after_load_kb": 46160,
+        "vmhwm_after_run_kb": 84268,
+        "vmhwm_kb": 84268,
+        "vmrss_end_kb": 73752,
+        "heap_sys_bytes": 42893312,
+        "total_alloc_bytes": 88291488,
+        "num_gc": 13,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "cache-rerun",
+        "trials": 1000,
+        "passes": 948,
+        "errors": 0,
+        "cache_hits": 1000,
+        "load_sec": 0.02575951,
+        "run_sec": 0.057242553,
+        "vmhwm_start_kb": 36956,
+        "vmhwm_after_load_kb": 46288,
+        "vmhwm_after_run_kb": 69220,
+        "vmhwm_kb": 69220,
+        "vmrss_end_kb": 64800,
+        "heap_sys_bytes": 35553280,
+        "total_alloc_bytes": 88268504,
+        "num_gc": 16,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "cache-rerun",
+        "trials": 1000,
+        "passes": 948,
+        "errors": 0,
+        "cache_hits": 1000,
+        "load_sec": 0.024370188,
+        "run_sec": 0.045807179,
+        "vmhwm_start_kb": 37140,
+        "vmhwm_after_load_kb": 46084,
+        "vmhwm_after_run_kb": 75504,
+        "vmhwm_kb": 75504,
+        "vmrss_end_kb": 64796,
+        "heap_sys_bytes": 39223296,
+        "total_alloc_bytes": 88401712,
+        "num_gc": 14,
+        "gomaxprocs": 12
+      }
+    ],
+    "fill_child": {
+      "scenario": "cache-fill",
+      "trials": 1000,
+      "passes": 948,
+      "errors": 0,
+      "cache_hits": 0,
+      "load_sec": 0.025290508,
+      "run_sec": 0.185117128,
+      "vmhwm_start_kb": 39056,
+      "vmhwm_after_load_kb": 46476,
+      "vmhwm_after_run_kb": 181744,
+      "vmhwm_kb": 181744,
+      "vmrss_end_kb": 144212,
+      "heap_sys_bytes": 149553152,
+      "total_alloc_bytes": 1121391560,
+      "num_gc": 31,
+      "gomaxprocs": 12
+    },
+    "page_cache_state": "warm (files written moments earlier; page cache not dropped, no root)"
+  },
+  "memory": {
+    "cases": 20000,
+    "samples": 5,
+    "trials": 100000,
+    "in_process_vmhwm_mb": {
+      "n": 3,
+      "min": 568.65234375,
+      "median": 691.5546875,
+      "mean": 660.5872395833334,
+      "p90": 715.5546875,
+      "p99": 720.9546875,
+      "max": 721.5546875
+    },
+    "cli_maxrss_mb": {
+      "n": 3,
+      "min": 725.66796875,
+      "median": 749.18359375,
+      "mean": 752.72265625,
+      "p90": 776.48984375,
+      "p99": 782.63375,
+      "max": 783.31640625
+    },
+    "results_json_bytes": 89975959,
+    "target_mb": 150,
+    "target_met": false,
+    "streaming_note": "results are held in memory and written once as results.json; no JSONL trajectory streaming exists in this version",
+    "children": [
+      {
+        "scenario": "memory",
+        "trials": 100000,
+        "passes": 94969,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.522926618,
+        "run_sec": 0.893125002,
+        "write_sec": 0.773275526,
+        "result_bytes": 89968218,
+        "vmhwm_start_kb": 37008,
+        "vmhwm_after_load_kb": 149668,
+        "vmhwm_after_run_kb": 383360,
+        "vmhwm_kb": 582300,
+        "vmrss_end_kb": 581804,
+        "heap_sys_bytes": 888504320,
+        "total_alloc_bytes": 2200136440,
+        "num_gc": 27,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "memory",
+        "trials": 100000,
+        "passes": 94969,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.508772704,
+        "run_sec": 0.950368343,
+        "write_sec": 0.813608314,
+        "result_bytes": 89968761,
+        "vmhwm_start_kb": 37224,
+        "vmhwm_after_load_kb": 149792,
+        "vmhwm_after_run_kb": 395940,
+        "vmhwm_kb": 738872,
+        "vmrss_end_kb": 667864,
+        "heap_sys_bytes": 930381824,
+        "total_alloc_bytes": 2199948384,
+        "num_gc": 27,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "memory",
+        "trials": 100000,
+        "passes": 94969,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0.454816058,
+        "run_sec": 0.832369716,
+        "write_sec": 0.742853137,
+        "result_bytes": 89975959,
+        "vmhwm_start_kb": 37544,
+        "vmhwm_after_load_kb": 145860,
+        "vmhwm_after_run_kb": 364064,
+        "vmhwm_kb": 708152,
+        "vmrss_end_kb": 639944,
+        "heap_sys_bytes": 938803200,
+        "total_alloc_bytes": 2200311792,
+        "num_gc": 28,
+        "gomaxprocs": 12
+      }
+    ],
+    "cli_runs": [
+      {
+        "wall_sec": 2.020355022,
+        "maxrss_kb": 767164,
+        "exit_code": 0
+      },
+      {
+        "wall_sec": 1.9425362320000001,
+        "maxrss_kb": 743084,
+        "exit_code": 0
+      },
+      {
+        "wall_sec": 1.972759596,
+        "maxrss_kb": 802116,
+        "exit_code": 0
+      }
+    ],
+    "cli_flags": "run <suite> --cache off --no-baseline --out <tmp>"
+  },
+  "concurrency": {
+    "cases": 50,
+    "samples": 3,
+    "trials": 150,
+    "rpm": 600,
+    "concurrency": 32,
+    "latency": "300ms",
+    "jitter": "100ms",
+    "ceiling_req_per_sec": 10,
+    "limiter_burst": 10,
+    "ideal_wall_sec": 14.3,
+    "wall_sec": {
+      "n": 5,
+      "min": 14.224576852,
+      "median": 14.270166572,
+      "mean": 14.272375968599999,
+      "p90": 14.3194149988,
+      "p99": 14.33061640528,
+      "max": 14.331861006
+    },
+    "end_to_end_trials_per_sec": {
+      "n": 5,
+      "min": 10.466191371602253,
+      "median": 10.511440020211138,
+      "mean": 10.50989600074233,
+      "p90": 10.542179949906728,
+      "p99": 10.54483422945664,
+      "max": 10.54512914940663
+    },
+    "steady_state_arrivals_per_sec": {
+      "n": 5,
+      "min": 10.00109741398996,
+      "median": 10.002185245997106,
+      "mean": 10.00211116365679,
+      "p90": 10.002886873791475,
+      "p99": 10.003248519102412,
+      "max": 10.00328870191474
+    },
+    "pct_of_ceiling_end_to_end_median": 105.11440020211137,
+    "pct_of_ceiling_steady_state_median": 100.02185245997106,
+    "ideal_wall_over_measured_wall_pct_median": 100.20906152601285,
+    "target_pct_of_ceiling": 98,
+    "children": [
+      {
+        "scenario": "concurrency",
+        "trials": 150,
+        "passes": 144,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0,
+        "run_sec": 14.300745988,
+        "vmhwm_start_kb": 37024,
+        "vmhwm_after_load_kb": 0,
+        "vmhwm_after_run_kb": 0,
+        "vmhwm_kb": 48228,
+        "vmrss_end_kb": 48228,
+        "heap_sys_bytes": 11370496,
+        "total_alloc_bytes": 16360328,
+        "num_gc": 10,
+        "requests": 150,
+        "first_to_last_arrival_sec": 13.997949751,
+        "steady_arrival_rate_per_sec": 10.002185245997106,
+        "burst_observed_at_t0": 10,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "concurrency",
+        "trials": 150,
+        "passes": 144,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0,
+        "run_sec": 14.224576852,
+        "vmhwm_start_kb": 38936,
+        "vmhwm_after_load_kb": 0,
+        "vmhwm_after_run_kb": 0,
+        "vmhwm_kb": 48192,
+        "vmrss_end_kb": 48192,
+        "heap_sys_bytes": 10813440,
+        "total_alloc_bytes": 16321352,
+        "num_gc": 9,
+        "requests": 150,
+        "first_to_last_arrival_sec": 13.997661618,
+        "steady_arrival_rate_per_sec": 10.002284131606578,
+        "burst_observed_at_t0": 10,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "concurrency",
+        "trials": 150,
+        "passes": 144,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0,
+        "run_sec": 14.331861006,
+        "vmhwm_start_kb": 39124,
+        "vmhwm_after_load_kb": 0,
+        "vmhwm_after_run_kb": 0,
+        "vmhwm_kb": 48876,
+        "vmrss_end_kb": 48876,
+        "heap_sys_bytes": 15499264,
+        "total_alloc_bytes": 16803528,
+        "num_gc": 10,
+        "requests": 150,
+        "first_to_last_arrival_sec": 13.998498851,
+        "steady_arrival_rate_per_sec": 10.00170032477557,
+        "burst_observed_at_t0": 10,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "concurrency",
+        "trials": 150,
+        "passes": 144,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0,
+        "run_sec": 14.234529425,
+        "vmhwm_start_kb": 36968,
+        "vmhwm_after_load_kb": 0,
+        "vmhwm_after_run_kb": 0,
+        "vmhwm_kb": 48620,
+        "vmrss_end_kb": 48620,
+        "heap_sys_bytes": 15532032,
+        "total_alloc_bytes": 16702576,
+        "num_gc": 10,
+        "requests": 150,
+        "first_to_last_arrival_sec": 13.998965924,
+        "steady_arrival_rate_per_sec": 10.00109741398996,
+        "burst_observed_at_t0": 10,
+        "gomaxprocs": 12
+      },
+      {
+        "scenario": "concurrency",
+        "trials": 150,
+        "passes": 144,
+        "errors": 0,
+        "cache_hits": 0,
+        "load_sec": 0,
+        "run_sec": 14.270166572,
+        "vmhwm_start_kb": 36980,
+        "vmhwm_after_load_kb": 0,
+        "vmhwm_after_run_kb": 0,
+        "vmhwm_kb": 48424,
+        "vmrss_end_kb": 48424,
+        "heap_sys_bytes": 15499264,
+        "total_alloc_bytes": 16527592,
+        "num_gc": 10,
+        "requests": 150,
+        "first_to_last_arrival_sec": 13.999016052,
+        "steady_arrival_rate_per_sec": 10.00328870191474,
+        "burst_observed_at_t0": 10,
+        "gomaxprocs": 12
+      }
+    ]
+  },
+  "cold_start": {
+    "command": "/home/guilherme/dev/evalvet/bin/evalvet version",
+    "warmup_discarded": 10,
+    "runs": 200,
+    "wall_ms": {
+      "n": 200,
+      "min": 7.408206,
+      "median": 8.804445999999999,
+      "mean": 9.537751855,
+      "p90": 12.4749673,
+      "p99": 16.65640017999999,
+      "max": 20.369141
+    },
+    "maxrss_mb": {
+      "n": 200,
+      "min": 38.4140625,
+      "median": 38.9140625,
+      "mean": 38.8809375,
+      "p90": 39.0390625,
+      "p99": 39.0390625,
+      "max": 39.0390625
+    },
+    "target_ms": 15,
+    "target_met": true,
+    "method": "os/exec fork+exec+wait measured with time.Now around cmd.Run, stdout to io.Discard; includes Go exec overhead; binary and page cache warm after warm-up"
+  },
+  "micro": [
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/bench/microbench",
+      "name": "BenchmarkTrial-12",
+      "samples": 10,
+      "median": {
+        "B/op": 26450.5,
+        "allocs/op": 370,
+        "ns/op": 73522
+      },
+      "min": {
+        "B/op": 26443,
+        "allocs/op": 370,
+        "ns/op": 70873
+      },
+      "max": {
+        "B/op": 26458,
+        "allocs/op": 370,
+        "ns/op": 80776
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/bench/microbench",
+      "name": "BenchmarkTrialBatch1000-12",
+      "samples": 10,
+      "median": {
+        "B/op": 19138316.5,
+        "allocs/op": 281349.5,
+        "ns/op": 48548874.5,
+        "ns/trial": 48549
+      },
+      "min": {
+        "B/op": 19109071,
+        "allocs/op": 281203,
+        "ns/op": 28639732,
+        "ns/trial": 28640
+      },
+      "max": {
+        "B/op": 19210555,
+        "allocs/op": 282014,
+        "ns/op": 94366541,
+        "ns/trial": 94367
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/bench/microbench",
+      "name": "BenchmarkComputeKey-12",
+      "samples": 10,
+      "median": {
+        "B/op": 9563,
+        "MB/s": 13.195,
+        "allocs/op": 146,
+        "ns/op": 24929
+      },
+      "min": {
+        "B/op": 9561,
+        "MB/s": 8.17,
+        "allocs/op": 146,
+        "ns/op": 24455
+      },
+      "max": {
+        "B/op": 9564,
+        "MB/s": 13.45,
+        "allocs/op": 146,
+        "ns/op": 40289
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/bench/microbench",
+      "name": "BenchmarkCanonicalJSON-12",
+      "samples": 10,
+      "median": {
+        "B/op": 8729,
+        "MB/s": 18,
+        "allocs/op": 139,
+        "ns/op": 23882
+      },
+      "min": {
+        "B/op": 8727,
+        "MB/s": 9.79,
+        "allocs/op": 139,
+        "ns/op": 21155
+      },
+      "max": {
+        "B/op": 8733,
+        "MB/s": 20.28,
+        "allocs/op": 139,
+        "ns/op": 43821
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/bench/microbench",
+      "name": "BenchmarkCacheHitFS-12",
+      "samples": 10,
+      "median": {
+        "B/op": 47711.5,
+        "allocs/op": 21,
+        "ns/op": 29324.5
+      },
+      "min": {
+        "B/op": 47668,
+        "allocs/op": 21,
+        "ns/op": 28138
+      },
+      "max": {
+        "B/op": 47716,
+        "allocs/op": 21,
+        "ns/op": 46256
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/bench/microbench",
+      "name": "BenchmarkMockComplete-12",
+      "samples": 10,
+      "median": {
+        "B/op": 1170,
+        "allocs/op": 23,
+        "ns/op": 4721
+      },
+      "min": {
+        "B/op": 1170,
+        "allocs/op": 23,
+        "ns/op": 4535
+      },
+      "max": {
+        "B/op": 1170,
+        "allocs/op": 23,
+        "ns/op": 6878
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/bench/microbench",
+      "name": "BenchmarkAssert3-12",
+      "samples": 10,
+      "median": {
+        "B/op": 5710,
+        "allocs/op": 94,
+        "ns/op": 17722.5
+      },
+      "min": {
+        "B/op": 5709,
+        "allocs/op": 94,
+        "ns/op": 16708
+      },
+      "max": {
+        "B/op": 5712,
+        "allocs/op": 94,
+        "ns/op": 31128
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/bench/microbench",
+      "name": "BenchmarkRenderPrompt-12",
+      "samples": 10,
+      "median": {
+        "B/op": 4348,
+        "allocs/op": 40,
+        "ns/op": 5061
+      },
+      "min": {
+        "B/op": 4348,
+        "allocs/op": 40,
+        "ns/op": 4984
+      },
+      "max": {
+        "B/op": 4349,
+        "allocs/op": 40,
+        "ns/op": 10694
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/internal/stats",
+      "name": "BenchmarkBootstrap10kx500-12",
+      "samples": 10,
+      "median": {
+        "B/op": 81936,
+        "allocs/op": 2,
+        "ns/op": 23272495
+      },
+      "min": {
+        "B/op": 81936,
+        "allocs/op": 2,
+        "ns/op": 23204384
+      },
+      "max": {
+        "B/op": 81938,
+        "allocs/op": 2,
+        "ns/op": 23370603
+      }
+    },
+    {
+      "package": "github.com/Guilherme-Ciano/evalvet/internal/stats",
+      "name": "BenchmarkPermutation10kx500-12",
+      "samples": 10,
+      "median": {
+        "B/op": 16,
+        "allocs/op": 1,
+        "ns/op": 48202620.5
+      },
+      "min": {
+        "B/op": 16,
+        "allocs/op": 1,
+        "ns/op": 47684546
+      },
+      "max": {
+        "B/op": 16,
+        "allocs/op": 1,
+        "ns/op": 91012912
+      }
+    }
+  ],
+  "caveats": [
+    "CPU governor (powersave, EPP balance_performance) and boost (on) were observed, not pinned: no root access. Expect run-to-run variance of several percent.",
+    "Shared desktop: another agent was reviewing code and a third occasionally ran go test during the session; min/max spreads are reported so outliers are visible.",
+    "No CPU pinning (taskset) was used; harness, children and the mock HTTP server share all 12 logical CPUs.",
+    "Concurrency scenario: same-host loopback, mock upstream; it measures limiter fidelity, not internet latency.",
+    "Cache rerun: page cache was warm (files written moments before); a cold-disk rerun will be slower.",
+    "Memory: results.json is built in memory; trajectories are not streamed to JSONL in this version.",
+    "Working tree was dirty when measured (see env.json git_dirty_files); production code under internal/ and cmd/ was not modified by the harness."
+  ]
+}

@@ -1,0 +1,114 @@
+?   	github.com/Guilherme-Ciano/evalvet/bench/cmd/demo	[no test files]
+?   	github.com/Guilherme-Ciano/evalvet/bench/cmd/harness	[no test files]
+goos: linux
+goarch: amd64
+pkg: github.com/Guilherme-Ciano/evalvet/bench/microbench
+cpu: AMD Ryzen 5 4600G with Radeon Graphics
+BenchmarkTrial-12             	   14394	     80776 ns/op	   26443 B/op	     370 allocs/op
+BenchmarkTrial-12             	   16894	     70873 ns/op	   26443 B/op	     370 allocs/op
+BenchmarkTrial-12             	   16266	     72678 ns/op	   26448 B/op	     370 allocs/op
+BenchmarkTrial-12             	   16714	     71693 ns/op	   26443 B/op	     370 allocs/op
+BenchmarkTrial-12             	   16939	     72156 ns/op	   26454 B/op	     370 allocs/op
+BenchmarkTrial-12             	   15844	     75344 ns/op	   26450 B/op	     370 allocs/op
+BenchmarkTrial-12             	   16210	     75367 ns/op	   26451 B/op	     370 allocs/op
+BenchmarkTrial-12             	   16134	     73673 ns/op	   26453 B/op	     370 allocs/op
+BenchmarkTrial-12             	   16065	     74015 ns/op	   26458 B/op	     370 allocs/op
+BenchmarkTrial-12             	   16554	     73371 ns/op	   26456 B/op	     370 allocs/op
+BenchmarkTrialBatch1000-12    	      42	  29268789 ns/op	     29269 ns/trial	19134308 B/op	  281304 allocs/op
+BenchmarkTrialBatch1000-12    	      40	  29009029 ns/op	     29009 ns/trial	19109123 B/op	  281203 allocs/op
+BenchmarkTrialBatch1000-12    	      51	  28639732 ns/op	     28640 ns/trial	19109071 B/op	  281214 allocs/op
+BenchmarkTrialBatch1000-12    	      34	  30025103 ns/op	     30025 ns/trial	19121893 B/op	  281265 allocs/op
+BenchmarkTrialBatch1000-12    	      36	  51860907 ns/op	     51861 ns/trial	19151668 B/op	  281478 allocs/op
+BenchmarkTrialBatch1000-12    	      38	  45236842 ns/op	     45237 ns/trial	19142325 B/op	  281389 allocs/op
+BenchmarkTrialBatch1000-12    	      12	  86235773 ns/op	     86236 ns/trial	19210410 B/op	  281865 allocs/op
+BenchmarkTrialBatch1000-12    	      13	  84911984 ns/op	     84912 ns/trial	19210555 B/op	  281696 allocs/op
+BenchmarkTrialBatch1000-12    	      13	  94366541 ns/op	     94367 ns/trial	19207839 B/op	  282014 allocs/op
+BenchmarkTrialBatch1000-12    	      15	  92394343 ns/op	     92394 ns/trial	19113895 B/op	  281310 allocs/op
+BenchmarkComputeKey-12        	   25170	     40289 ns/op	   8.17 MB/s	    9564 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   49494	     24913 ns/op	  13.21 MB/s	    9564 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   49011	     24672 ns/op	  13.33 MB/s	    9562 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   48602	     24455 ns/op	  13.45 MB/s	    9561 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   49311	     24922 ns/op	  13.20 MB/s	    9562 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   47262	     25010 ns/op	  13.15 MB/s	    9563 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   48366	     24936 ns/op	  13.19 MB/s	    9563 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   48885	     24715 ns/op	  13.31 MB/s	    9561 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   48637	     27687 ns/op	  11.88 MB/s	    9563 B/op	     146 allocs/op
+BenchmarkComputeKey-12        	   29690	     33682 ns/op	   9.77 MB/s	    9563 B/op	     146 allocs/op
+BenchmarkCanonicalJSON-12     	   32872	     43821 ns/op	   9.79 MB/s	    8733 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   37809	     42624 ns/op	  10.06 MB/s	    8730 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   36939	     27373 ns/op	  15.67 MB/s	    8729 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   53902	     22702 ns/op	  18.90 MB/s	    8727 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   52186	     22339 ns/op	  19.20 MB/s	    8729 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   51042	     25189 ns/op	  17.03 MB/s	    8727 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   46864	     24944 ns/op	  17.20 MB/s	    8728 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   51183	     22820 ns/op	  18.80 MB/s	    8732 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   58268	     21194 ns/op	  20.24 MB/s	    8730 B/op	     139 allocs/op
+BenchmarkCanonicalJSON-12     	   55153	     21155 ns/op	  20.28 MB/s	    8728 B/op	     139 allocs/op
+BenchmarkCacheHitFS-12        	   40767	     28731 ns/op	   47711 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   43234	     28138 ns/op	   47710 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   42411	     28674 ns/op	   47716 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   42727	     28330 ns/op	   47716 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   42150	     29682 ns/op	   47700 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   40719	     29652 ns/op	   47712 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   24763	     46256 ns/op	   47668 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   35068	     33406 ns/op	   47707 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   40380	     30209 ns/op	   47714 B/op	      21 allocs/op
+BenchmarkCacheHitFS-12        	   41217	     28997 ns/op	   47712 B/op	      21 allocs/op
+BenchmarkMockComplete-12      	  233458	      4663 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  247244	      4732 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  225034	      5000 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  241785	      6531 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  156291	      6878 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  242614	      4932 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  244581	      4710 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  256666	      4694 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  270158	      4550 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkMockComplete-12      	  273252	      4535 ns/op	    1170 B/op	      23 allocs/op
+BenchmarkAssert3-12           	   71152	     16708 ns/op	    5710 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   73860	     16759 ns/op	    5710 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   43076	     27826 ns/op	    5711 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   59671	     19757 ns/op	    5709 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   46388	     31128 ns/op	    5712 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   67018	     17262 ns/op	    5711 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   70130	     17312 ns/op	    5710 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   67738	     17304 ns/op	    5709 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   71721	     18133 ns/op	    5710 B/op	      94 allocs/op
+BenchmarkAssert3-12           	   36182	     29497 ns/op	    5712 B/op	      94 allocs/op
+BenchmarkRenderPrompt-12      	  232834	      5043 ns/op	    4349 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  232986	      5142 ns/op	    4349 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  233869	      5069 ns/op	    4348 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  237304	      5053 ns/op	    4349 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  241023	      5162 ns/op	    4348 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  179199	     10694 ns/op	    4348 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  203446	      5141 ns/op	    4348 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  234690	      5031 ns/op	    4348 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  248503	      4984 ns/op	    4348 B/op	      40 allocs/op
+BenchmarkRenderPrompt-12      	  236646	      5045 ns/op	    4348 B/op	      40 allocs/op
+PASS
+ok  	github.com/Guilherme-Ciano/evalvet/bench/microbench	98.634s
+goos: linux
+goarch: amd64
+pkg: github.com/Guilherme-Ciano/evalvet/internal/stats
+cpu: AMD Ryzen 5 4600G with Radeon Graphics
+BenchmarkBootstrap10kx500-12      	      49	  23260046 ns/op	   81936 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      48	  23310786 ns/op	   81936 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      51	  23204384 ns/op	   81938 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      51	  23275876 ns/op	   81936 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      51	  23370603 ns/op	   81936 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      51	  23235002 ns/op	   81936 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      50	  23253941 ns/op	   81936 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      50	  23295719 ns/op	   81938 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      51	  23269114 ns/op	   81936 B/op	       2 allocs/op
+BenchmarkBootstrap10kx500-12      	      51	  23328977 ns/op	   81936 B/op	       2 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  48016772 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  48044361 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  47684546 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  48148336 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  48063259 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  48336295 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  48256905 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  49010104 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      24	  50893451 ns/op	      16 B/op	       1 allocs/op
+BenchmarkPermutation10kx500-12    	      12	  91012912 ns/op	      16 B/op	       1 allocs/op
+PASS
+ok  	github.com/Guilherme-Ciano/evalvet/internal/stats	23.323s
