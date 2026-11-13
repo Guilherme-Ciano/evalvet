@@ -311,20 +311,21 @@ Inputs: `version`, `suites`, `args`, `cache`, `comment`, `github-token`. Outputs
 ## Benchmarks
 
 <!-- bench:start -->
-Hardware: AMD Ryzen 5 4600G (6C/12T), 15.5 GiB RAM, Linux 7.3.3, go1.27.1, GOMAXPROCS=12. Same-host loopback, mock upstream, CPU governor not pinned (powersave, boost on), background load present (load average 5.66 at start), working tree dirty. Run-to-run variance of several percent is expected. Run 2026-11-12 at commit `0850173`.
+Hardware: AMD Ryzen 5 4600G (6C/12T), 15.5 GiB RAM, Linux 7.3.3, go1.27.1, GOMAXPROCS=12. Same-host loopback, mock upstream, CPU governor not pinned (powersave, boost on), background load present (load average 4.43 at start). Run 2026-11-13 on the code of commit `ec8f12d`; the full report is in [`bench/results/2026-11-13-ryzen5-4600g-e443871/report.md`](bench/results/2026-11-13-ryzen5-4600g-e443871/report.md).
 
 | Benchmark | Result | Target | Verdict |
 |---|---|---|---|
-| Orchestration throughput (10,000 cases x 1, in-process mock, cache off) | 99,831 trials/s median (min 91,229, max 120,686; 7 runs); 30,659 trials/s including YAML load | at least 20,000 trials/s | met |
-| Overhead per trial (`BenchmarkTrial`) | 73.5 µs/op, 25.8 KB/op, 370 allocs/op (median of 10) | under 50 µs and under 20 KB | **NOT MET** |
-| Stats cost (bootstrap 10k x 500) | 23.3 ms/op (median of 10) | under 200 ms | met |
-| Realistic concurrency (HTTP mock 300 ± 100 ms, rpm 600, concurrency 32, 150 trials) | steady state 10.00 req/s = 100.0% of the 10 req/s ceiling; wall 14.27 s vs ideal 14.30 s (5 runs) | within 2% of ceiling | met |
-| Cache rerun (1,000 cases, fully cached, CLI wall) | 111 ms median (max 120 ms), 1000/1000 hits, $0, warm page cache | under 1 s | met |
-| Peak RSS, 100,000 trials (20,000 cases x 5) | CLI 783 MB max (median 749); in-process VmHWM 722 MB max (median 692) | under 150 MB | **NOT MET** |
-| Cold start (`evalvet version`) | 8.80 ms median (p90 12.47, max 20.37; 200 runs) | under 15 ms | met |
+| Orchestration throughput (10,000 cases x 1, in-process mock, cache off) | 102,265 trials/s median (min 88,879, max 115,057; 7 runs); 32,237 trials/s including YAML load | at least 20,000 trials/s | met |
+| Overhead per trial (`BenchmarkTrial`) | 78.6 µs/op, 25.8 KB/op, 370 allocs/op (median of 10) | under 50 µs and under 20 KB | **NOT MET** |
+| Stats cost (bootstrap 10k x 500) | 24.0 ms/op (median of 10) | under 200 ms | met |
+| Realistic concurrency (HTTP mock 300 ± 100 ms, rpm 600, concurrency 32, 150 trials) | steady state 10.00 req/s = 100.0% of the 10 req/s ceiling; wall 14.31 s vs ideal 14.30 s (5 runs) | within 2% of ceiling | met |
+| Cache rerun (1,000 cases, fully cached, CLI wall) | 93 ms median (max 103 ms), 1000/1000 hits, $0, warm page cache | under 1 s | met |
+| Peak RSS, 100,000 trials (20,000 cases x 5) | CLI 739 MB max (median 733); in-process VmHWM 726 MB max (median 710) | under 150 MB | **NOT MET** |
+| Cold start (`evalvet version`) | 7.59 ms median (p90 9.16, max 16.57; 200 runs) | under 15 ms | met |
 
-Two targets are not met. Per-trial overhead is about 47% over its CPU target and about 29% over its allocation target, and memory is roughly five times the target because results are held in memory and written once as `results.json`; streaming trials to JSONL is on the v0.3 roadmap. The concurrency scenario measures limiter fidelity on loopback, not internet latency.
+Two targets are not met. Per-trial overhead is about 57% over its CPU target and about 29% over its allocation target. Memory is about five times the target because every trial is held in memory and written once as `results.json`; streaming trials to JSONL is on the roadmap. The concurrency scenario measures how faithfully the rate limiter holds its ceiling on loopback, not internet latency.
 <!-- bench:end -->
+
 
 Methodology and caveats: [`bench/README.md`](bench/README.md). Full report: [`bench/results/2026-11-12-ryzen5-4600g-0850173/report.md`](bench/results/2026-11-12-ryzen5-4600g-0850173/report.md). Reproduce:
 

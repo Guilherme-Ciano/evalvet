@@ -12,7 +12,7 @@ The seeded demo regression (mock provider, no API keys), as the tool prints it:
 
 pass rate 0.98 → 0.76 (Δ −0.22, 95% CI [−0.34, −0.12]), p=<0.001, N=50 cases × k=3 · REGRESSION
 
-On my laptop with the mock provider, a fully cached 1,000-case rerun takes about 0.1 s, and cold start is about 9 ms. It is one static binary, so there is no Python in your CI image.
+On my laptop with the mock provider, a fully cached 1,000-case rerun takes about 0.1 s, and cold start is about 8 ms. It is one static binary, so there is no Python in your CI image.
 
 Repo: https://github.com/Guilherme-Ciano/evalvet
 
@@ -26,6 +26,6 @@ Before posting, update:
 
 - Confirm the Anthropic temperature, top_p and top_k change against the official changelog, then drop "reportedly" or reword.
 - Run the Sonnet 5.5 to Haiku 5.5 demo (`examples/invoice-swap`, `--budget-usd 5`) and consider swapping the mock number for the real result.
-- Refresh the benchmarks in `bench/results` and re-check the 0.1 s and 9 ms figures (currently 111 ms and 8.80 ms median, 2026-11-12).
+- Refresh the benchmarks in `bench/results` before posting and re-check the 0.1 s and 8 ms figures (93 ms and 7.59 ms median on 2026-11-13).
 - Attach the PR-comment screenshot.
 - Make the repository public so the link works.
