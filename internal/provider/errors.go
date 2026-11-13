@@ -17,3 +17,12 @@ func HTTPError(name string, status int, header http.Header, msg string) *domain.
 		RetryAfter: transport.ParseRetryAfter(header, time.Now()),
 	}
 }
+
+func Truncated(name string) *domain.ProviderError {
+	return &domain.ProviderError{
+		Provider:   name,
+		StatusCode: http.StatusBadGateway,
+		Message:    "stream ended before a stop reason; the response was not cached",
+		Retryable:  true,
+	}
+}

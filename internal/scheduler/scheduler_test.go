@@ -545,7 +545,7 @@ func TestGatedBudgetAccounting(t *testing.T) {
 	p := scheduler.Wrap(fp, scheduler.NewGate(scheduler.Limits{}), scheduler.Options{
 		Budget:   budget,
 		Estimate: func(domain.Request) (int, float64, bool) { return 10, 0.4, true },
-		Price:    func(domain.Usage) (float64, bool) { return 0.1, true },
+		Price:    func(string, domain.Usage) (float64, bool) { return 0.1, true },
 	})
 	for range 5 {
 		if _, err := p.Complete(context.Background(), domain.Request{}); err != nil {
@@ -611,7 +611,7 @@ func TestGatedConcurrentBudgetRace(t *testing.T) {
 	p := scheduler.Wrap(fp, scheduler.NewGate(scheduler.Limits{Concurrency: 8}), scheduler.Options{
 		Budget:   budget,
 		Estimate: func(domain.Request) (int, float64, bool) { return 5, 1, true },
-		Price:    func(domain.Usage) (float64, bool) { return 1, true },
+		Price:    func(string, domain.Usage) (float64, bool) { return 1, true },
 	})
 	var wg sync.WaitGroup
 	var exceeded atomic.Int64
@@ -634,7 +634,7 @@ func TestGatedUnpricedResponseSpendsNothing(t *testing.T) {
 	budget := scheduler.NewBudget(1)
 	p := scheduler.Wrap(fp, scheduler.NewGate(scheduler.Limits{TPM: 600000}), scheduler.Options{
 		Budget: budget,
-		Price:  func(domain.Usage) (float64, bool) { return 0, false },
+		Price:  func(string, domain.Usage) (float64, bool) { return 0, false },
 	})
 	if _, err := p.Complete(context.Background(), domain.Request{}); err != nil {
 		t.Fatal(err)

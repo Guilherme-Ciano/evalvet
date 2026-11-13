@@ -14,7 +14,10 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-const filePrefix = "file://"
+const (
+	filePrefix          = "file://"
+	DefaultMaxErrorRate = 0.2
+)
 
 type LookupEnv func(string) (string, bool)
 
@@ -102,6 +105,10 @@ func (s *Suite) applyDefaults() {
 	}
 	if s.Gates.MinEffect <= 0 {
 		s.Gates.MinEffect = 0.03
+	}
+	if s.Gates.MaxErrorRate == nil {
+		def := DefaultMaxErrorRate
+		s.Gates.MaxErrorRate = &def
 	}
 	for i := range s.Compare {
 		if s.Compare[i].Mode == "" {

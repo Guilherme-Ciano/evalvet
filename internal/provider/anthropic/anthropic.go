@@ -152,6 +152,9 @@ func (p *Provider) Complete(ctx context.Context, req domain.Request) (domain.Res
 	if err := stream.Err(); err != nil {
 		return domain.Response{}, p.mapError(err)
 	}
+	if msg.StopReason == "" {
+		return domain.Response{}, provider.Truncated(p.cfg.Name)
+	}
 	resp := domain.Response{Model: msg.Model, StopReason: stopReason(msg.StopReason)}
 	var text strings.Builder
 	for _, b := range msg.Content {

@@ -136,13 +136,16 @@ func (s *Session) next(name string) int {
 }
 
 func (s *Session) Call(ctx context.Context, call domain.ToolCall) domain.ToolResult {
+	return s.callAt(ctx, call, s.next(call.Name))
+}
+
+func (s *Session) callAt(ctx context.Context, call domain.ToolCall, n int) domain.ToolResult {
 	res := domain.ToolResult{CallID: call.ID, Name: call.Name}
 	t, ok := s.reg.tools[call.Name]
 	if !ok {
 		res.Content, res.IsError = `{"error":"unknown tool"}`, true
 		return res
 	}
-	n := s.next(call.Name)
 	if t.latency > 0 {
 		timer := time.NewTimer(t.latency)
 		select {

@@ -239,7 +239,7 @@ func defaultTransport() http.RoundTripper {
 	return c
 }
 
-const maxRetryAfter = time.Hour
+const maxRetryAfter = time.Minute
 
 func seconds(v string, unit time.Duration) (time.Duration, bool) {
 	f, err := strconv.ParseFloat(v, 64)

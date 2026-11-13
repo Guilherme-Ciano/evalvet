@@ -81,6 +81,13 @@ func (a *App) apiKey(name string, p config.Provider) (string, error) {
 	if p.BaseURL != "" {
 		return "unused", nil
 	}
+	if p.APIKeyEnv == "" {
+		return "", fmt.Errorf(
+			"provider %s: set api_key_env to the environment variable holding the API key: %w",
+			name,
+			domain.ErrAuth,
+		)
+	}
 	return "", fmt.Errorf("provider %s: environment variable %s is not set: %w", name, p.APIKeyEnv, domain.ErrAuth)
 }
 
@@ -164,6 +171,7 @@ func (a *App) buildProviders(suite *config.Suite, budget *scheduler.Budget) (*pr
 			scheduler.Options{
 				Budget:     budget,
 				MaxRetries: a.opts.MaxRetries,
+				Timeout:    suite.Defaults.Timeout,
 				Estimate:   a.estimator(suite, name),
 				Price:      a.pricer(suite, name),
 			},
@@ -225,8 +233,11 @@ func (a *App) estimator(suite *config.Suite, provider string) scheduler.Estimato
 
 func (a *App) pricer(suite *config.Suite, provider string) scheduler.Pricer {
 	targets := a.targetsOfProvider(suite, provider)
-	return func(u domain.Usage) (float64, bool) {
+	return func(model string, u domain.Usage) (float64, bool) {
 		for _, tn := range targets {
+			if suite.Targets[tn].Model != model {
+				continue
+			}
 			if e, ok := a.priceEntry(suite, tn); ok {
 				return e.Cost(u), true
 			}

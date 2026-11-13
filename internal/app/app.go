@@ -236,7 +236,7 @@ func (a *App) buildPlan(s *config.Suite, targets []string, ps *providerSet) (run
 		return runner.Plan{}, fmt.Errorf("%w: %w", domain.ErrConfig, err)
 	}
 	deps := assert.Deps{JudgeSamples: s.Defaults.Judge.Samples, Judge: a.buildJudge(s, ps)}
-	plan := runner.Plan{Tools: reg, Concurrency: ps.concurrency, Timeout: s.Defaults.Timeout, KeepTraj: a.opts.KeepTraj}
+	plan := runner.Plan{Tools: reg, Concurrency: ps.concurrency, KeepTraj: a.opts.KeepTraj}
 	for _, name := range targets {
 		t := s.Targets[name]
 		plan.Targets = append(plan.Targets, runner.Target{
@@ -352,11 +352,11 @@ func (a *App) assemble(s *config.Suite, plan runner.Plan, trials []domain.Trial,
 	for _, t := range plan.Targets {
 		res.Targets = append(res.Targets, runner.Aggregate(t, plan.Cases, trials))
 	}
-	var baseGates []domain.GateFailure
-	var baseWarnings []string
-	res.Comparisons, baseGates, baseWarnings = a.Comparisons(s, res)
+	comparisons, baseGates, baseWarnings := a.Comparisons(s, res)
+	res.Comparisons = comparisons
 	res.Warnings = append(res.Warnings, baseWarnings...)
-	res.Gates = append(baseGates, Gates(s, res)...)
+	res.Gates = baseGates
+	res.Gates = append(res.Gates, Gates(s, res)...)
 	res.Duration = a.opts.Clock().Sub(started)
 	return res
 }
@@ -387,7 +387,10 @@ func (a *App) Comparisons(s *config.Suite, res domain.RunResult) ([]domain.Compa
 		case err == nil:
 			out = append(out, CompareBaseline(b, res, opts)...)
 		case errors.Is(err, baseline.ErrNotFound):
-			warnings = append(warnings, "baseline "+p+" not found: nothing to compare against (save one with --save-baseline)")
+			warnings = append(
+				warnings,
+				"baseline "+p+" not found: nothing to compare against (save one with --save-baseline)",
+			)
 		default:
 			gates = append(gates, domain.GateFailure{Gate: GateBaseline, Target: "*", Message: err.Error()})
 		}

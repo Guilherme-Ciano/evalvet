@@ -504,12 +504,10 @@ func TestTruncatedStreamWithoutDone(t *testing.T) {
 		)
 	})
 	p, _ := newProvider(t, h, false)
-	resp, err := p.Complete(t.Context(), userReq("m", "go"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if resp.Text != "ab" || resp.StopReason != domain.StopOther {
-		t.Fatalf("resp = %+v", resp)
+	_, err := p.Complete(t.Context(), userReq("m", "go"))
+	pe, ok := errors.AsType[*domain.ProviderError](err)
+	if !ok || !pe.Retryable {
+		t.Fatalf("truncated stream must be a retryable provider error, got %v", err)
 	}
 }
 

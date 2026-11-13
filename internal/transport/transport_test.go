@@ -36,7 +36,7 @@ func TestParseRetryAfter(t *testing.T) {
 		{
 			"http date in the future",
 			http.Header{"Retry-After": {now.Add(90 * time.Second).Format(http.TimeFormat)}},
-			90 * time.Second,
+			time.Minute,
 		},
 		{
 			"http date in the past",
@@ -54,7 +54,7 @@ func TestParseRetryAfter(t *testing.T) {
 			http.Header{"Retry-After-Ms": {"x"}, "Retry-After": {"2"}},
 			2 * time.Second,
 		},
-		{"ratelimit reset requests duration", http.Header{"X-Ratelimit-Reset-Requests": {"6m0s"}}, 6 * time.Minute},
+		{"ratelimit reset requests duration", http.Header{"X-Ratelimit-Reset-Requests": {"6m0s"}}, time.Minute},
 		{"ratelimit reset tokens duration", http.Header{"X-Ratelimit-Reset-Tokens": {"1.5s"}}, 1500 * time.Millisecond},
 		{
 			"largest ratelimit reset wins",

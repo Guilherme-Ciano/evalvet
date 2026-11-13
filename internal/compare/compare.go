@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	ModeRegression     = "regression"
-	ModeNonInferiority = "noninferiority"
+	ModeRegression         = "regression"
+	ModeNonInferiority     = "noninferiority"
+	MinNonInferiorityCases = 5
 )
 
 type Options struct {
@@ -119,7 +120,11 @@ func Compare(name string, base, head domain.TargetStats, o Options) domain.Compa
 	}
 	sort.SliceStable(diffs, func(a, b int) bool { return diffs[a].PAdjusted < diffs[b].PAdjusted })
 	c.Cases = diffs
-	c.Verdict, c.Reasons = decide(c, o, c.Reasons)
+	niLow := c.CILow
+	if o.Mode == ModeNonInferiority {
+		niLow, _ = stats.BootstrapMeanCI(d, o.Bootstrap, seed+2, 1-2*o.Alpha)
+	}
+	c.Verdict, c.Reasons = decide(c, o, niLow, c.Reasons)
 	if c.Verdict != domain.VerdictPass && c.Verdict != domain.VerdictNonInferior && !anySignificant(diffs, o.Alpha) {
 		c.Reasons = append(
 			c.Reasons,
@@ -152,18 +157,23 @@ func signed(v float64) string {
 	return "0.000"
 }
 
-func decide(c domain.Comparison, o Options, reasons []string) (domain.Verdict, []string) {
+func decideNonInferiority(c domain.Comparison, o Options, niLow float64, reasons []string) (domain.Verdict, []string) {
+	level := fmt.Sprintf("%.0f%%", (1-2*o.Alpha)*100)
+	switch {
+	case c.N < MinNonInferiorityCases:
+		r := fmt.Sprintf("only %d paired cases; non-inferiority needs at least %d", c.N, MinNonInferiorityCases)
+		return domain.VerdictNotNonInferior, append(reasons, r)
+	case niLow > -o.Margin:
+		r := fmt.Sprintf("%s CI lower bound %s > −%.2f margin", level, signed(niLow), o.Margin)
+		return domain.VerdictNonInferior, append(reasons, r)
+	}
+	r := fmt.Sprintf("%s CI lower bound %s ≤ −%.2f margin", level, signed(niLow), o.Margin)
+	return domain.VerdictNotNonInferior, append(reasons, r)
+}
+
+func decide(c domain.Comparison, o Options, niLow float64, reasons []string) (domain.Verdict, []string) {
 	if o.Mode == ModeNonInferiority {
-		if c.CILow > -o.Margin {
-			return domain.VerdictNonInferior, append(
-				reasons,
-				fmt.Sprintf("CI lower bound %s > −%.2f margin", signed(c.CILow), o.Margin),
-			)
-		}
-		return domain.VerdictNotNonInferior, append(
-			reasons,
-			fmt.Sprintf("CI lower bound %s ≤ −%.2f margin", signed(c.CILow), o.Margin),
-		)
+		return decideNonInferiority(c, o, niLow, reasons)
 	}
 	switch {
 	case c.P < o.Alpha && c.Delta < -o.MinEffect:

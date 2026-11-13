@@ -59,14 +59,18 @@ func Run(ctx context.Context, call Caller, req domain.Request, tools *Session, l
 
 func execute(ctx context.Context, tools *Session, calls []domain.ToolCall) []domain.ToolResult {
 	results := make([]domain.ToolResult, len(calls))
+	seq := make([]int, len(calls))
+	for i, c := range calls {
+		seq[i] = tools.next(c.Name)
+	}
 	if len(calls) == 1 {
-		results[0] = tools.Call(ctx, calls[0])
+		results[0] = tools.callAt(ctx, calls[0], seq[0])
 		return results
 	}
 	var wg sync.WaitGroup
 	for i, c := range calls {
 		wg.Go(func() {
-			results[i] = tools.Call(ctx, c)
+			results[i] = tools.callAt(ctx, c, seq[i])
 		})
 	}
 	wg.Wait()

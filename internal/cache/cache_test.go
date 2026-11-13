@@ -569,12 +569,23 @@ func TestProviderErrorPaths(t *testing.T) {
 	ctx := context.Background()
 	boom := errors.New("boom")
 
-	t.Run("store get error propagates without calling inner", func(t *testing.T) {
+	t.Run("corrupt entry is a miss in rw mode", func(t *testing.T) {
 		t.Parallel()
 		inner := &fakeProvider{name: "p"}
 		store := newMemStore()
 		store.getErr = boom
-		_, err := Wrap(inner, store, ModeRW, "e", &Counters{}).Complete(ctx, req(0))
+		counters := &Counters{}
+		_, err := Wrap(inner, store, ModeRW, "e", counters).Complete(ctx, req(0))
+		if err != nil || inner.calls != 1 || counters.Snapshot().Corrupt != 1 {
+			t.Fatalf("err=%v calls=%d stats=%+v", err, inner.calls, counters.Snapshot())
+		}
+	})
+	t.Run("corrupt entry fails in replay mode without calling inner", func(t *testing.T) {
+		t.Parallel()
+		inner := &fakeProvider{name: "p"}
+		store := newMemStore()
+		store.getErr = boom
+		_, err := Wrap(inner, store, ModeReplay, "e", &Counters{}).Complete(ctx, req(0))
 		if !errors.Is(err, boom) || inner.calls != 0 {
 			t.Fatalf("err=%v calls=%d", err, inner.calls)
 		}

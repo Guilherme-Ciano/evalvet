@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type AssertOutcome struct {
 	Kind   string   `json:"kind"`
@@ -48,13 +51,23 @@ type Trial struct {
 	Trajectory *Trajectory     `json:"trajectory,omitempty"`
 }
 
+const maxReasonRunes = 240
+
+func OneLine(s string) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if r := []rune(s); len(r) > maxReasonRunes {
+		return string(r[:maxReasonRunes]) + "…"
+	}
+	return s
+}
+
 func (t Trial) FirstFailure() string {
 	if t.Errored {
-		return "error: " + t.Error
+		return OneLine("error: " + t.Error)
 	}
 	for _, a := range t.Asserts {
 		if !a.Pass {
-			return a.Kind + ": " + a.Reason
+			return OneLine(a.Kind + ": " + a.Reason)
 		}
 	}
 	return ""

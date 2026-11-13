@@ -161,6 +161,11 @@ func (c *cli) run(ctx context.Context, args []string, f *runFlags) error {
 			break
 		}
 	}
+	out := f.out
+	if out == "" {
+		out = "."
+	}
+	c.setOutputs(out, worst)
 	if worst == ExitOK {
 		return nil
 	}
@@ -206,7 +211,6 @@ func (c *cli) runSuite(
 	case res.Failing():
 		code = ExitRegression
 	}
-	c.setOutputs(res, out, code)
 	return code, runErr
 }
 
@@ -276,19 +280,19 @@ func writeOutputs(dir string, res domain.RunResult) error {
 	return nil
 }
 
-func (c *cli) setOutputs(res domain.RunResult, out string, code int) {
+func (c *cli) setOutputs(out string, code int) {
 	p := c.getenv("GITHUB_OUTPUT")
 	if p == "" {
 		return
 	}
-	verdict := "pass"
+	verdict := "error"
 	switch code {
+	case ExitOK:
+		verdict = "pass"
 	case ExitRegression:
 		verdict = "regression"
-	case ExitInfra, ExitBudget, ExitInterrupted:
-		verdict = "error"
 	}
-	body := fmt.Sprintf("verdict=%s\nreport=%s\nsuite=%s", verdict, filepath.Join(out, "report.md"), res.Suite)
+	body := fmt.Sprintf("verdict=%s\nreport=%s", verdict, filepath.Join(out, "report.md"))
 	if err := github.AppendStepSummary(p, body); err != nil {
 		fmt.Fprintln(c.streams.Err, "evalvet: write GITHUB_OUTPUT:", errors.Unwrap(err))
 	}

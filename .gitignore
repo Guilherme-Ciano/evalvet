@@ -8,3 +8,4 @@ coverage.html
 bench/results/profiles/
 *.test
 *.prof
+/evalvet

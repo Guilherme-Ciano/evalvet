@@ -120,7 +120,19 @@ func TestUpsertCommentPatchesMarkerOnSecondPage(t *testing.T) {
 	f, env := newFake(t)
 	f.pages = map[int][]map[string]any{
 		1: filler(100, 1),
-		2: {{"id": 500, "body": "noise"}, {"id": 777, "body": "<!-- evalvet:s -->\nold report"}},
+		2: {
+			{"id": 500, "body": "noise"},
+			{
+				"id":   776,
+				"body": "<!-- evalvet:s -->\nhijack",
+				"user": map[string]any{"login": "mallory", "type": "User"},
+			},
+			{
+				"id":   777,
+				"body": "<!-- evalvet:s -->\nold report",
+				"user": map[string]any{"login": "github-actions[bot]", "type": "Bot"},
+			},
+		},
 	}
 	c := github.NewClient(http.DefaultClient, env)
 	got, err := c.UpsertComment(context.Background(), 12, "<!-- evalvet:s -->", "new")
@@ -259,7 +271,7 @@ func TestUpsertCommentPatchAndPostFailures(t *testing.T) {
 		t.Parallel()
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
-				_, _ = io.WriteString(w, `[{"id":5,"body":"m"}]`)
+				_, _ = io.WriteString(w, `[{"id":5,"body":"m","user":{"login":"github-actions[bot]","type":"Bot"}}]`)
 				return
 			}
 			w.WriteHeader(http.StatusNotFound)

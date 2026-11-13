@@ -73,6 +73,14 @@ func NewClient(c *http.Client, env Env) *Client {
 type comment struct {
 	ID   int64  `json:"id"`
 	Body string `json:"body"`
+	User struct {
+		Login string `json:"login"`
+		Type  string `json:"type"`
+	} `json:"user"`
+}
+
+func (c comment) ownedByBot() bool {
+	return c.User.Type == "Bot" || strings.HasSuffix(c.User.Login, "[bot]")
 }
 
 func (c *Client) do(ctx context.Context, method, url string, body, out any) error {
@@ -128,7 +136,7 @@ func (c *Client) findComment(ctx context.Context, pr int, marker string) (int64,
 			return 0, err
 		}
 		for _, cm := range list {
-			if strings.Contains(cm.Body, marker) {
+			if cm.ownedByBot() && strings.Contains(cm.Body, marker) {
 				return cm.ID, nil
 			}
 		}

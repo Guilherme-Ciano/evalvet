@@ -247,6 +247,9 @@ func (p *Provider) Complete(ctx context.Context, req domain.Request) (domain.Res
 	if err := stream.Err(); err != nil {
 		return domain.Response{}, p.mapError(err)
 	}
+	if st.finish == "" {
+		return domain.Response{}, provider.Truncated(p.cfg.Name)
+	}
 	return st.response(rec.TTFB()), nil
 }
 

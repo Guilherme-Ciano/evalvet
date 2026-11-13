@@ -131,17 +131,18 @@ func (s *FS) Put(_ context.Context, k Key, resp domain.Response) error {
 }
 
 type Stats struct {
-	Hits   int64
-	Misses int64
-	Writes int64
+	Hits    int64
+	Misses  int64
+	Writes  int64
+	Corrupt int64
 }
 
 type Counters struct {
-	hits, misses, writes atomic.Int64
+	hits, misses, writes, corrupt atomic.Int64
 }
 
 func (c *Counters) Snapshot() Stats {
-	return Stats{Hits: c.hits.Load(), Misses: c.misses.Load(), Writes: c.writes.Load()}
+	return Stats{Hits: c.hits.Load(), Misses: c.misses.Load(), Writes: c.writes.Load(), Corrupt: c.corrupt.Load()}
 }
 
 type Provider struct {
@@ -184,8 +185,12 @@ func (p *Provider) Complete(ctx context.Context, req domain.Request) (domain.Res
 	}
 	if p.mode.reads() {
 		resp, ok, err := p.store.Get(ctx, key)
-		if err != nil {
+		if err != nil && p.mode == ModeReplay {
 			return domain.Response{}, err
+		}
+		if err != nil {
+			p.counters.corrupt.Add(1)
+			ok = false
 		}
 		if ok {
 			p.counters.hits.Add(1)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand/v2"
+	"net/http"
 	"sync"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 
 	"github.com/Guilherme-Ciano/evalvet/internal/domain"
 )
+
+var ErrAttemptTimeout = errors.New("provider attempt timed out")
 
 type Limits struct {
 	RPM         int
@@ -178,7 +181,7 @@ func (b *Budget) Spent() float64 {
 
 type Estimator func(req domain.Request) (tokens int, costUSD float64, priced bool)
 
-type Pricer func(u domain.Usage) (float64, bool)
+type Pricer func(model string, u domain.Usage) (float64, bool)
 
 type Gated struct {
 	inner      domain.Provider
@@ -188,6 +191,7 @@ type Gated struct {
 	price      Pricer
 	maxRetries int
 	backoff    time.Duration
+	timeout    time.Duration
 }
 
 type Options struct {
@@ -196,6 +200,7 @@ type Options struct {
 	Price      Pricer
 	MaxRetries int
 	Backoff    time.Duration
+	Timeout    time.Duration
 }
 
 func Wrap(inner domain.Provider, gate *Gate, o Options) *Gated {
@@ -210,6 +215,7 @@ func Wrap(inner domain.Provider, gate *Gate, o Options) *Gated {
 		price:      o.Price,
 		maxRetries: o.MaxRetries,
 		backoff:    o.Backoff,
+		timeout:    o.Timeout,
 	}
 }
 
@@ -255,11 +261,24 @@ func (g *Gated) once(ctx context.Context, req domain.Request, tokens int, est fl
 		g.budget.Commit(est, 0)
 		return domain.Response{}, err
 	}
-	resp, err := g.inner.Complete(ctx, req)
+	callCtx, cancel := ctx, context.CancelFunc(func() {})
+	if g.timeout > 0 {
+		callCtx, cancel = context.WithTimeoutCause(ctx, g.timeout, ErrAttemptTimeout)
+	}
+	resp, err := g.inner.Complete(callCtx, req)
+	cancel()
 	release()
+	if err != nil && ctx.Err() == nil && errors.Is(context.Cause(callCtx), ErrAttemptTimeout) {
+		err = &domain.ProviderError{
+			Provider:   g.inner.Name(),
+			StatusCode: http.StatusGatewayTimeout,
+			Message:    "attempt timed out after " + g.timeout.String(),
+			Retryable:  true,
+		}
+	}
 	actual := 0.0
 	if err == nil && g.price != nil {
-		if c, ok := g.price(resp.Usage); ok {
+		if c, ok := g.price(req.Model, resp.Usage); ok {
 			actual = c
 		}
 		used := int(resp.Usage.InputTokens + resp.Usage.CachedInputTokens + resp.Usage.OutputTokens)
