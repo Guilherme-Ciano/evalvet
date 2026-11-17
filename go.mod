@@ -2,6 +2,8 @@ module github.com/Guilherme-Ciano/evalvet
 
 go 1.27.0
 
+toolchain go1.27.4
+
 require (
 	github.com/anthropics/anthropic-sdk-go/v2 v2.9.0
 	github.com/goccy/go-yaml v1.19.2
