@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/Guilherme-Ciano/evalvet/compare/v1.0.0...v1.0.1) (2026-11-17)
+
+
+### Bug fixes
+
+* **config:** reject YAML that panics the decoder instead of crashing ([81d7e54](https://github.com/Guilherme-Ciano/evalvet/commit/81d7e54d7c41db41bf17ccc125f3afb818d2ac70))
+* **config:** reject YAML that panics the decoder instead of crashing ([ae249ec](https://github.com/Guilherme-Ciano/evalvet/commit/ae249ec9afea9b1bc7224e2ed77e1ef22bda4802))
+
 ## 1.0.0 (2026-11-17)
 
 
