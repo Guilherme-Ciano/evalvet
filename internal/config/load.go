@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,12 +35,8 @@ func Parse(path string, raw []byte, env LookupEnv) (*Suite, error) {
 		env = os.LookupEnv
 	}
 	s := &Suite{}
-	if err := yaml.UnmarshalWithOptions(raw, s, yaml.DisallowUnknownField()); err != nil {
-		return nil, &ValidationError{Fields: []FieldError{{
-			File: path,
-			Line: yamlErrorLine(err),
-			Msg:  firstLine(yaml.FormatError(err, false, false)),
-		}}}
+	if verr := decodeSuite(path, raw, s); verr != nil {
+		return nil, verr
 	}
 	s.File = path
 	s.Dir = filepath.Dir(path)
@@ -194,7 +191,7 @@ func (s *Suite) readJSONRef(v any) (any, error) {
 		return v, nil
 	}
 	var out any
-	if err := yaml.Unmarshal([]byte(text), &out); err != nil {
+	if err := guardedUnmarshal([]byte(text), &out); err != nil {
 		return nil, fmt.Errorf("decode %s: %w", str, err)
 	}
 	return out, nil
@@ -298,4 +295,34 @@ func canonicalJSON(v any) ([]byte, error) {
 		return nil, fmt.Errorf("encode suite: %w", err)
 	}
 	return buf.Bytes(), nil
+}
+
+var errDecoderPanic = errors.New("malformed YAML rejected by the decoder")
+
+func decodeSuite(path string, raw []byte, s *Suite) (verr *ValidationError) {
+	defer func() {
+		if r := recover(); r != nil {
+			verr = &ValidationError{Fields: []FieldError{{File: path, Msg: fmt.Sprintf("%v: %v", errDecoderPanic, r)}}}
+		}
+	}()
+	if err := yaml.UnmarshalWithOptions(raw, s, yaml.DisallowUnknownField()); err != nil {
+		return &ValidationError{Fields: []FieldError{{
+			File: path,
+			Line: yamlErrorLine(err),
+			Msg:  firstLine(yaml.FormatError(err, false, false)),
+		}}}
+	}
+	return nil
+}
+
+func guardedUnmarshal(data []byte, v any) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%w: %v", errDecoderPanic, r)
+		}
+	}()
+	if err := yaml.Unmarshal(data, v); err != nil {
+		return fmt.Errorf("unmarshal: %w", err)
+	}
+	return nil
 }

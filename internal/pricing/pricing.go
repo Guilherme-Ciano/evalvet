@@ -36,10 +36,22 @@ type Table struct {
 	Models   []Entry `yaml:"models"`
 }
 
+func decode(raw []byte, t *Table) (msg string, ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			msg, ok = fmt.Sprintf("malformed YAML rejected by the decoder: %v", r), false
+		}
+	}()
+	if err := yaml.UnmarshalWithOptions(raw, t, yaml.DisallowUnknownField()); err != nil {
+		return yaml.FormatError(err, false, false), false
+	}
+	return "", true
+}
+
 func Parse(raw []byte) (Table, error) {
 	var t Table
-	if err := yaml.UnmarshalWithOptions(raw, &t, yaml.DisallowUnknownField()); err != nil {
-		return Table{}, fmt.Errorf("parse pricing: %s: %w", yaml.FormatError(err, false, false), domain.ErrConfig)
+	if msg, ok := decode(raw, &t); !ok {
+		return Table{}, fmt.Errorf("parse pricing: %s: %w", msg, domain.ErrConfig)
 	}
 	for i, e := range t.Models {
 		if e.Provider == "" || e.Model == "" {
