@@ -1,5 +1,15 @@
 # evalvet
 
+<p align="center">
+  <a href="https://github.com/Guilherme-Ciano/evalvet/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Guilherme-Ciano/evalvet/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/Guilherme-Ciano/evalvet/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/Guilherme-Ciano/evalvet/actions/workflows/codeql.yml/badge.svg"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/Guilherme-Ciano/evalvet"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/Guilherme-Ciano/evalvet/badge"></a>
+  <a href="https://github.com/Guilherme-Ciano/evalvet/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Guilherme-Ciano/evalvet"></a>
+  <a href="https://pkg.go.dev/github.com/Guilherme-Ciano/evalvet"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/Guilherme-Ciano/evalvet.svg"></a>
+  <a href="https://goreportcard.com/report/github.com/Guilherme-Ciano/evalvet"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/Guilherme-Ciano/evalvet"></a>
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
+</p>
+
 **Regression tests for prompts and agents, with p-values, not vibes. One Go binary, CI-native.**
 
 evalvet samples every test case several times, compares the result with a committed baseline using a paired permutation test and a bootstrap confidence interval, and fails your pull request only when a drop is both statistically and practically significant.
