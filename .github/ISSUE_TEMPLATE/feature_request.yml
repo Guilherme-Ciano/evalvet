@@ -1,0 +1,21 @@
+name: Feature request
+description: A new assertion, provider, statistic, reporter or integration
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you are trying to evaluate or gate and why the current behaviour is not enough.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: For a statistical change, link the method or paper and describe how it changes the gate decision.
+  - type: textarea
+    id: cost
+    attributes:
+      label: Cost and determinism impact
+      description: Could this change spend more API money, break cache keys or make reports less reproducible?

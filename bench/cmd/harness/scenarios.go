@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"syscall"
 	"time"
 )
 
@@ -63,9 +62,7 @@ func runCLI(ctx context.Context, bin string, args ...string) (cliRun, error) {
 	} else if err != nil {
 		return r, fmt.Errorf("exec %s: %w", bin, err)
 	}
-	if ru, ok := cmd.ProcessState.SysUsage().(*syscall.Rusage); ok {
-		r.MaxRSSKB = ru.Maxrss
-	}
+	r.MaxRSSKB = maxRSSKB(cmd.ProcessState)
 	if r.ExitCode != 0 {
 		return r, fmt.Errorf("%s %v exited %d: %s", bin, args, r.ExitCode, stderr.String())
 	}

@@ -1,0 +1,53 @@
+name: Bug report
+description: Something evalvet does wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste API keys, tokens or real customer data. Replace prompts and fixtures with synthetic ones.
+        Security issues go through SECURITY.md, not here.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `evalvet version`
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      options: [mock, openai, openai_compatible, anthropic, not provider related]
+    validations:
+      required: true
+  - type: dropdown
+    id: exit-code
+    attributes:
+      label: Exit code
+      description: 0 pass, 1 regression or gate, 2 usage or config, 3 infrastructure, 4 budget exceeded, 130 interrupted
+      options: ["0", "1", "2", "3", "4", "130", other]
+    validations:
+      required: true
+  - type: textarea
+    id: suite
+    attributes:
+      label: Minimal suite
+      description: "The smallest suite YAML that reproduces the problem, without API keys. Prefer `kind: mock` when possible."
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and output
+      description: The exact `evalvet` command and the relevant output.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behaviour
+    validations:
+      required: true
