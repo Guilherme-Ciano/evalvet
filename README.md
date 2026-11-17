@@ -14,11 +14,6 @@
 
 evalvet samples every test case several times, compares the result with a committed baseline using a paired permutation test and a bootstrap confidence interval, and fails your pull request only when a drop is both statistically and practically significant.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Guilherme-Ciano/evalvet/ci.yml?branch=main&style=flat-square&label=CI&color=lightgrey&labelColor=444444)](https://github.com/Guilherme-Ciano/evalvet/actions/workflows/ci.yml)
-[![Go Reference](https://img.shields.io/badge/go-reference-lightgrey?style=flat-square&labelColor=444444)](https://pkg.go.dev/github.com/Guilherme-Ciano/evalvet)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square&labelColor=444444)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/Guilherme-Ciano/evalvet?style=flat-square&color=lightgrey&labelColor=444444)](https://github.com/Guilherme-Ciano/evalvet/releases)
-
 ## Why
 
 - **One sample is a coin flip.** LLM output is not deterministic, so a fixed threshold such as "pass rate at least 0.9" on a single run makes the same commit pass and fail. evalvet samples each case k times and treats the case, not the trial, as the unit of analysis.
@@ -336,8 +331,7 @@ Hardware: AMD Ryzen 5 4600G (6C/12T), 15.5 GiB RAM, Linux 7.3.3, go1.27.1, GOMAX
 Two targets are not met. Per-trial overhead is about 57% over its CPU target and about 29% over its allocation target. Memory is about five times the target because every trial is held in memory and written once as `results.json`; streaming trials to JSONL is on the roadmap. The concurrency scenario measures how faithfully the rate limiter holds its ceiling on loopback, not internet latency.
 <!-- bench:end -->
 
-
-Methodology and caveats: [`bench/README.md`](bench/README.md). Full report: [`bench/results/2026-11-12-ryzen5-4600g-0850173/report.md`](bench/results/2026-11-12-ryzen5-4600g-0850173/report.md). Reproduce:
+Methodology and caveats: [`bench/README.md`](bench/README.md). Full report: [`bench/results/2026-11-13-ryzen5-4600g-e443871/report.md`](bench/results/2026-11-13-ryzen5-4600g-e443871/report.md). Reproduce:
 
 ```bash
 make build
